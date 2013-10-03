@@ -39,21 +39,33 @@ class SpriteObject: public DrawableObject{
 
 class BGManager{
 	private:
-		
+		bool Dirty;
 	public:
-
+		void bgmFlipBuffer();
+		
 };
 class ScoreManager{
 	private:
-
+		u16 HighScores[128];
+		u16 ScoreIndex;
 	public:
-
+		void clearScores();
+		void addScore(const char*, u16);
+		u16 getHighscore(u16);
 };
 class SoundManager{
 	private:
-
+		mm_word BGM[8];
+		mm_word SFX[16];
 	public:
-
+		void playBGM(int, bool);
+		void playSFX(int);
+		void stopBGM();
+		void setBGMVol(mm_word);
+		void setBGMRepeat(bool);
+		void setBGMTempo(mm_word);
+		const char* getBGMName(int);
+		
 };
 
 
