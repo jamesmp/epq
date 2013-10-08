@@ -1,6 +1,4 @@
 #include <nds.h>
-#include <vector>
-
 class Object{
 	private:
 		
@@ -17,7 +15,7 @@ class DrawableObject; public Object{
 		bool Solid;
 		bool Opaque;
 };
-class Background{
+class BackgroundObject: public DrawableObject {
 	private:
 		
 	public:
@@ -31,7 +29,7 @@ class Background{
 		void draw();
 		
 };
-class Sprite{
+class SpriteObject: public DrawableObject{
 	private:
 		
 	public:
@@ -73,7 +71,7 @@ class SoundManager{
 
 class Level{
 	private:
-		vector<Object*> ObjList;
+
 	public:
 		void onLoad();
 		void onUnload();
