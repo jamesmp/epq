@@ -1,6 +1,16 @@
 #include <nds.h>
 #include <vector>
 
+class Object;
+class DrawableObject: public Object;
+class Background;
+class Sprite;
+class BGManager;
+class ScoreManager;
+class SoundManager;
+class Level;
+class Game;
+
 class Object{
 	private:
 		
@@ -42,8 +52,11 @@ class Sprite{
 class BGManager{
 	private:
 		bool Dirty;
+		*Game GameInstance;
 	public:
+		BGManager(*Game);
 		void bgmFlipBuffer();
+
 		
 };
 class ScoreManager{
@@ -59,6 +72,7 @@ class SoundManager{
 	private:
 		mm_word BGM[8];
 		mm_word SFX[16];
+		*Game GameInstance;
 	public:
 		void playBGM(int, bool);
 		void playSFX(int);
@@ -73,8 +87,13 @@ class SoundManager{
 
 class Level{
 	private:
-		vector<Object*> ObjList;
+		std::vector<Object*> ObjList;
+		Game* GameInstance;
+		bool MainScreen;
+		OamState* OamInstance
+		SpriteMapping SpriteMapMode;
 	public:
+		Level(*Game, bool);
 		void onLoad();
 		void onUnload();
 		
@@ -91,6 +110,7 @@ class Game{
 		int ticks;
 		touchPosition touch;
 		
+		Game();	
 		void mainLoop();
 		void loadLevel(Level*);
 };
