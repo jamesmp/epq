@@ -13,15 +13,17 @@ class Game;
 
 class Object{
 	private:
-		
+		Level* LevelInstance;
 	public:
 		virtual void tick();
+		virtual void onLoad(*Level);
 		virtual void draw();
 };
 class DrawableObject; public Object{
 	private:
 		
 	public:
+		virtual void onLoad(*Level);
 		int XPos;
 		int YPos;
 		bool Solid;
@@ -43,7 +45,7 @@ class Background{
 };
 class Sprite{
 	private:
-		
+		*SpriteEntry sprite;
 	public:
 		void draw();
 };
@@ -52,9 +54,9 @@ class Sprite{
 class BGManager{
 	private:
 		bool Dirty;
-		*Game GameInstance;
+		Game* GameInstance;
 	public:
-		BGManager(*Game);
+		BGManager(Game*);
 		void bgmFlipBuffer();
 
 		
@@ -72,7 +74,7 @@ class SoundManager{
 	private:
 		mm_word BGM[8];
 		mm_word SFX[16];
-		*Game GameInstance;
+		Game* GameInstance;
 	public:
 		void playBGM(int, bool);
 		void playSFX(int);
@@ -89,13 +91,13 @@ class Level{
 	private:
 		std::vector<Object*> ObjList;
 		Game* GameInstance;
-		bool MainScreen;
 		OamState* OamInstance
 		SpriteMapping SpriteMapMode;
 	public:
-		Level(*Game, bool);
+		Level(Game*, bool);
 		void onLoad();
 		void onUnload();
+		bool loadObject(Object*);
 		
 };
 class Game{
@@ -112,5 +114,5 @@ class Game{
 		
 		Game();	
 		void mainLoop();
-		void loadLevel(Level*);
+		void loadLevel(*Level);
 };
