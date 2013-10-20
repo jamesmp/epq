@@ -1,118 +1,118 @@
 #include <nds.h>
 #include <vector>
 
-class Object;
-class DrawableObject: public Object;
-class Background;
 class Sprite;
-class BGManager;
-class ScoreManager;
-class SoundManager;
+class Background;
+class Entity;
+class Object;
 class Level;
+class SoundManager;
+class ScoreManager;
 class Game;
 
-class Object{
-	private:
-		Level* LevelInstance;
+class Sprite{
 	public:
-		virtual void tick();
-		virtual void onLoad(*Level);
-		virtual void draw();
-};
-class DrawableObject; public Object{
+		SpriteEntry* SpriteEntry
+		SpriteEntry* getSpriteEntry();
+		SpriteEntry* setSpriteEntry();
 	private:
-		
-	public:
-		virtual void onLoad(*Level);
-		int XPos;
-		int YPos;
-		bool Solid;
-		bool Opaque;
 };
-class Background{
-	private:
-		
+
+class BackgroundObj{
 	public:
 		u16* BlitData;
 		int BlitWidth;
 		int BlitHeight;
 		int DrawLayer;
-		int SpriteX;
-		int SpriteY;
-		
-		void draw();
-		
-};
-class Sprite{
+		int TileX;
+		int TileY;
 	private:
-		*SpriteEntry sprite;
-	public:
-		void draw();
 };
 
-
-class BGManager{
-	private:
-		bool Dirty;
-		Game* GameInstance;
+class Entity{
 	public:
-		BGManager(Game*);
-		void bgmFlipBuffer();
-
+		int GridX;
+		int GridY;
+		int aX;
+		int aY;
+		Sprite ISprite;
 		
-};
-class ScoreManager{
+		virtual bool useOn(Item*, Entity*)
+		virtual bool tick();
 	private:
-		u16 HighScores[128];
-		u16 ScoreIndex;
-	public:
-		void clearScores();
-		void addScore(const char*, u16);
-		u16 getHighscore(u16);
-};
-class SoundManager{
-	private:
-		mm_word BGM[8];
-		mm_word SFX[16];
-		Game* GameInstance;
-	public:
-		void playBGM(int, bool);
-		void playSFX(int);
-		void stopBGM();
-		void setBGMVol(mm_word);
-		void setBGMRepeat(bool);
-		void setBGMTempo(mm_word);
-		const char* getBGMName(int);
-		
 };
 
+class Block{
+	public:
+		int XPos;
+		int YPos;
+		bool Solid;
+		bool Opaque;
+		Entity* IEntity;
+		
+		virtual bool tick();
+		virtual bool useOn(Item*, Entity*);
+	private:
+};
 
 class Level{
-	private:
-		std::vector<Object*> ObjList;
-		Game* GameInstance;
-		OamState* OamInstance
-		SpriteMapping SpriteMapMode;
 	public:
-		Level(Game*, bool);
-		void onLoad();
-		void onUnload();
-		bool loadObject(Object*);
+		OamState OamTable;
+		int OamIndex;
+		int ViewX;
+		int ViewY;
+		int SizeX;
+		int SizeY;
+		SpriteMapping SpriteMapModeMain;
+		SpriteMapping SpriteMapModeSub;
+		vector<Block> Grid;
 		
+		SpriteEntry* getOamEntry();
+		void flipOam();
+		virtual bool tick();
+		virtual void onLoad();
+		virtual void onUnload();
+	private:
 };
+
+class ScoreManager{
+		private:
+				u16 HighScores[128];
+				u16 ScoreIndex;
+		public:
+				void clearScores();
+				void addScore(const char*, u16);
+				u16 getHighscore(u16);
+};
+
+class SoundManager{
+		private:
+				mm_word BGM[8];
+				mm_word SFX[16];
+		public:
+				SoundManager();
+				void playBGM(int, bool);
+				void playSFX(int);
+				void stopBGM();
+				void setBGMVol(mm_word);
+				void setBGMRepeat(bool);
+				void setBGMTempo(mm_word);
+				const char* getBGMName(int);
+};
+
 class Game{
-	private:
+		private:
 
-	public:
-		BGManager bgm;
-		ScoreManager scm;
-		SoundManager som;
-		Level lvl;
+		public:
+				BGManager bgm;
+				ScoreManager scm;
+				SoundManager som;
+				Level lvl;
 
-		int ticks;
-		touchPosition touch;
-		
-		Game();	
-		void mainLoop();
-		void loadLevel(*Level);
+				int ticks;
+				touchPosition touch;
+				
+				Game();        
+				void mainLoop();
+				void loadLevel(*Level);
 };

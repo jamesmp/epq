@@ -1,57 +1,35 @@
 #include "ClassDefinitions.h"
 
-// Level Methods
-Level::Level(Game* _gameInstance, bool _mainScreen){
-	GameInstance = _gameInstance;
-	MainScreen = _mainScreen;
-}
+//Sprite Methods
 
-void Level::onLoad(){
-	ObjList = ObjList<Object*>
-	oamInit(&oamMain, SpriteMapMode, false);
-	oamInit(&oamSub, SpriteMapMode, false);
-}
+//BackgroundObj Methods
 
-void Level::onUnload(){
-	for (std::vector<Object*>::iterator it = ObjList.begin(); it != ObjList.end(); ++it){
-		*it->unLoad();
-	}
-}
+//Entity Methods
 
-//Object Methods
-bool Object::onLoad(*Level _levelInstance){
-	LeveInstance = _levelInstance;
-}
+//Block Methods
 
-//DrawableObject Methods
-bool DrawableObject::onLoad(*Level _levelInstance){
-	
-}
-//BGManager Methods
-BGManager::BGManager(Game* _gameInstance){
-	GameInstance = _gameInstance;
-	
-}
+//Level Methods
+virtual void Level::onLoad(){
+	Grid = vector<Block>;
+	oamInit(&oamMain, SpriteMapModeMain, false);
+	oamInit(&oamSub, SpriteMapModeSub, false);
+};
+//ScoreManager Methods
 
 //SoundManager Methods
-SoundManager::SoundManager(Game* _gameInstance){
-	GameInstance = _gameInstance;
-	mmInitDefaultMem((mm_addr)soundbank_bin);
-	
-}
-
-//ScoreManager Methods
-ScoreManager::ScoreManager(Game* _gameInstance){
-	GameInstance = _gameInstance;
+SoundManager::SoundManager(){
+		GameInstance = _gameInstance;
+		mmInitDefaultMem((mm_addr)soundbank_bin);
+		
 }
 
 //Game Methods
 Game::Game(){
-	bgm = BGManager(this);
-	som = SoundManager(this);
-	scm = ScoreManager(this);
+		bgm = BGManager(this);
+		som = SoundManager(this);
+		scm = ScoreManager(this);
 }
 
 Game::loadLevel(*Level){
-	
+		
 }
