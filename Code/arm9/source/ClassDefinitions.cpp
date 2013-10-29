@@ -1,5 +1,9 @@
-#include "ClassDefinitions.h"
+#include "ClassDeclarations.h"
+#include <maxmod9.h>
+#include <vector>
 
+#include "soundbank_bin.h"
+#include "soundbank.h"
 //Sprite Methods
 
 //BackgroundObj Methods
@@ -11,8 +15,7 @@
 
 
 //Level Methods
-virtual void Level::onLoad(){
-	Grid = vector<Block>;
+void Level::onLoad(){
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
 };
@@ -21,16 +24,25 @@ virtual void Level::onLoad(){
 //SoundManager Methods
 SoundManager::SoundManager(){
 	mmInitDefaultMem((mm_addr)soundbank_bin);
+	BGM[0] = MOD_KEYG_SUBTONAL;
+	BGM[1] = MOD_PIGLUMP;
+	BGM[2] = MOD_PURPLE_MOTION_INSPIRATION;
+	BGM[3] = MOD_REZ_MONDAY;
+	BGM[4] = MOD_SO_CLOSE_;
+	BGM[5] = MOD_THE_NIMBYS;
+	BGM[6] = MOD_ULTRASYD_DUNGEON;
+	BGM[7] = MOD_ULTRASYDXCRZN;
+	BGM[8] = MOD_ULTRASYDXSELVMORD;
 	for (int i=0; i<sizeof(BGM)/sizeof(mm_word); i++){
-		mm_Load(BGM[i]);
+		mmLoad(BGM[i]);
 	}
 	for (int i=0; i<sizeof(SFX)/sizeof(mm_word); i++){
-		mm_LoadEffect(SFX[i]);
+		//mmLoadEffect(SFX[i]);
 	}
 	playingBGM = playingSFX = false;
 }
 
-void SoundManager::PlayBGM(u8 ind, bool loop){
+void SoundManager::playBGM(u8 ind, bool loop){
 	int elements = (u8)sizeof(BGM)/sizeof(mm_word);
 	ind > elements-1 ? ind = elements-1 : ind = ind;
 	if (playingBGM){ mmStop(); };
@@ -74,11 +86,18 @@ Game::Game(){
 	LevelPaused = true;
 }
 
-Game::loadLevel(Level*){
+void Game::loadLevel(Level* nLvl){
 	if (LevelLoaded){
 		lvl->onUnload();
 	}
-	lvl = Level
+	lvl = nLvl;
 	lvl->onLoad();
-	LevelLoaded = LevelPaused = true;	
+	LevelLoaded = true;	
+	LevelPaused = false;
+}
+
+void Game::mainLoop(){
+	if (LevelLoaded && !LevelPaused){
+		lvl->tick();
+	}
 }

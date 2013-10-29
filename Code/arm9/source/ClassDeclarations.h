@@ -1,8 +1,10 @@
 #include <nds.h>
+#include <maxmod9.h>
 #include <vector>
 
 class Sprite;
 class Background;
+class Item;
 class Entity;
 class Object;
 class Level;
@@ -12,7 +14,7 @@ class Game;
 
 class Sprite{
 	public:
-		SpriteEntry* SpriteEntry
+		SpriteEntry* ISpriteEntry;
 		SpriteEntry* getSpriteEntry();
 		SpriteEntry* setSpriteEntry();
 	private:
@@ -38,7 +40,7 @@ class Entity{
 		int aY;
 		Sprite ISprite;
 		
-		virtual bool useOn(Item*, Entity*)
+		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
 	private:
 };
@@ -49,7 +51,9 @@ class Block{
 		int YPos;
 		bool Solid;
 		bool Opaque;
+		BackgroundObj* IBGObj;
 		Entity* IEntity;
+		
 		
 		virtual void onLoad();
 		virtual bool tick();
@@ -67,7 +71,7 @@ class Level{
 		int SizeY;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
-		vector<Block> Grid;
+		std::vector<Block> Grid;
 		
 		SpriteEntry* getOamEntry();
 		void flipOam();
@@ -89,14 +93,14 @@ class ScoreManager{
 
 class SoundManager{
 		private:
-				mm_word BGM[(u8)8];
+				mm_word BGM[(u8)9];
 				mm_word SFX[(u8)16];
 				bool playingBGM;
 				bool playingSFX;
 		public:
 				SoundManager();
 				void playBGM(u8, bool);
-				void playSFX(u8, mm_word;);
+				void playSFX(u8, mm_word);
 				void stopBGM();
 				void setBGMVol(mm_word);
 				//void setBGMRepeat(bool);
@@ -109,15 +113,14 @@ class Game{
 				bool LevelLoaded;
 				bool LevelPaused;
 		public:
-				BGManager bgm;
 				ScoreManager scm;
 				SoundManager som;
-				Level lvl;
+				Level* lvl;
 
 				int ticks;
 				touchPosition touch;
 				
 				Game();        
 				void mainLoop();
-				void loadLevel(*Level);
+				void loadLevel(Level*);
 };
