@@ -26,6 +26,7 @@ class BackgroundObj{
 		int DrawLayer;
 		int TileX;
 		int TileY;
+		
 	private:
 };
 
@@ -50,6 +51,7 @@ class Block{
 		bool Opaque;
 		Entity* IEntity;
 		
+		virtual void onLoad();
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
 	private:
@@ -87,22 +89,25 @@ class ScoreManager{
 
 class SoundManager{
 		private:
-				mm_word BGM[8];
-				mm_word SFX[16];
+				mm_word BGM[(u8)8];
+				mm_word SFX[(u8)16];
+				bool playingBGM;
+				bool playingSFX;
 		public:
 				SoundManager();
-				void playBGM(int, bool);
-				void playSFX(int);
+				void playBGM(u8, bool);
+				void playSFX(u8, mm_word;);
 				void stopBGM();
 				void setBGMVol(mm_word);
-				void setBGMRepeat(bool);
+				//void setBGMRepeat(bool);
 				void setBGMTempo(mm_word);
-				const char* getBGMName(int);
+				//const char* getBGMName(int);
 };
 
 class Game{
 		private:
-
+				bool LevelLoaded;
+				bool LevelPaused;
 		public:
 				BGManager bgm;
 				ScoreManager scm;
