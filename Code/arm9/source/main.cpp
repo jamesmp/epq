@@ -11,34 +11,19 @@ int main(void) {
 //---------------------------------------------------------------------------------
 	consoleDemoInit();
 	Game g;
-	g.som.playBGM(2, true);
+	Level l;
+	Level* lp = &l;
+	g.loadLevel(lp);
 	iprintf("Hello World!\n");
-	u16 tempo = 1024;
-	u16 vol = 512;
-	u8 song = 2;
-	u8 oldsong = song;
 	while(1) {
 		scanKeys();
 		swiWaitForVBlank();
-		if (keysDown() & KEY_UP){ vol += 64; };
-		if (keysDown() & KEY_DOWN){ vol -= 64; };
+		if (keysDown() & KEY_RIGHT){REG_BG0HOFS+=1;};
+		if (keysDown() & KEY_LEFT){REG_BG0HOFS-=1;};
+		if (keysDown() & KEY_UP){REG_BG0VOFS-=1;};
+		if (keysDown() & KEY_DOWN){REG_BG0VOFS+=1;};
+		g.lvl->tick();
 		
-		if (keysDown() & KEY_LEFT){ tempo -= 64; };
-		if (keysDown() & KEY_RIGHT){ tempo += 64; };
-		
-		if (keysDown() & KEY_A){ song++; };
-		if (keysDown() & KEY_B){ song--; };
-		if (vol<0){ vol = 0;};
-		if (vol>1024){ vol = 1024;};
-		if (tempo<512){ tempo = 512;};
-		if (tempo>2048){ tempo = 2048;};
-		if (song<0){ song = 8;};
-		if (song>8){ song = 0;};
-		if (oldsong!=song){ g.som.playBGM(song, true); };
-		g.som.setBGMVol(vol);
-		g.som.setBGMTempo(tempo);
-		oldsong = song;
-		iprintf("Song: %i Volume: %i Tempo: %i\n", song, vol, tempo);
 	}
 
 }

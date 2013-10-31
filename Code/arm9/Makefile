@@ -24,16 +24,17 @@ INCLUDES	:=	include
 DATA		:=	data  
 GRAPHICS	:=	gfx  
 MUSIC       :=  audio
-ICON		:=
+ICON		:=  gameicon/icon.bmp
 
 # specify a directory which contains the nitro filesystem
 # this is relative to the Makefile
 NITRO_FILES	:=
 
 # These set the information text in the nds file
-GAME_TITLE		:=	Basic ARM9 template
-GAME_SUBTITLE1	:=	www.devkitpro.org
-GAME_SUBTITLE2	:=	www.drunkencoders.com
+GAME_TITLE		:=	EPQ
+GAME_SUBTITLE1	:=	James Pearson
+GAME_SUBTITLE2	:=	Candidate Number 7234
+
 
 #---------------------------------------------------------------------------------
 # options for code generation

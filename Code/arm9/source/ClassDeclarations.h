@@ -3,10 +3,9 @@
 #include <vector>
 
 class Sprite;
-class Background;
 class Item;
 class Entity;
-class Object;
+class Block;
 class Level;
 class SoundManager;
 class ScoreManager;
@@ -20,17 +19,7 @@ class Sprite{
 	private:
 };
 
-class BackgroundObj{
-	public:
-		u16* BlitData;
-		int BlitWidth;
-		int BlitHeight;
-		int DrawLayer;
-		int TileX;
-		int TileY;
-		
-	private:
-};
+
 
 class Entity{
 	public:
@@ -49,15 +38,16 @@ class Block{
 	public:
 		int XPos;
 		int YPos;
+		u16 TileIndex;
 		bool Solid;
 		bool Opaque;
-		BackgroundObj* IBGObj;
 		Entity* IEntity;
 		
 		
 		virtual void onLoad();
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
+		u16 getTileIndex();
 	private:
 };
 
@@ -69,6 +59,9 @@ class Level{
 		int ViewY;
 		int SizeX;
 		int SizeY;
+		int TileSize;
+		bool AnimDirty;
+		Entity* Player;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
 		std::vector<Block> Grid;
@@ -79,6 +72,7 @@ class Level{
 		virtual void onLoad();
 		virtual void onUnload();
 	private:
+		void drawLevel();
 };
 
 class ScoreManager{
@@ -93,7 +87,7 @@ class ScoreManager{
 
 class SoundManager{
 		private:
-				mm_word BGM[(u8)9];
+				mm_word BGM[(u8)11];
 				mm_word SFX[(u8)16];
 				bool playingBGM;
 				bool playingSFX;
@@ -112,6 +106,8 @@ class Game{
 		private:
 				bool LevelLoaded;
 				bool LevelPaused;
+				int BG0h, BG1h, BG2h, BG3h, BG0h_sub, BG1h_sub, BG2h_sub, BG3h_sub;
+				
 		public:
 				ScoreManager scm;
 				SoundManager som;
