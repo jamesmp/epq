@@ -59,8 +59,9 @@ class Level{
 		int ViewY;
 		int SizeX;
 		int SizeY;
-		int TileSize;
+		u16 TileSize;
 		bool AnimDirty;
+		Game* Gp;
 		Entity* Player;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
@@ -69,7 +70,7 @@ class Level{
 		SpriteEntry* getOamEntry();
 		void flipOam();
 		virtual bool tick();
-		virtual void onLoad();
+		virtual void onLoad(Game*);
 		virtual void onUnload();
 	private:
 		void drawLevel();

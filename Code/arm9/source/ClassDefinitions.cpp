@@ -21,8 +21,9 @@ void Block::onLoad(){};
 bool Block::tick(){return true;};
 bool Block::useOn(Item*, Entity*){return true;};
 //Level Methods
-void Level::onLoad(){
+void Level::onLoad(Game* _gp){
 	
+	Gp = _gp;
 	TileSize = 2;
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
@@ -32,28 +33,21 @@ void Level::onLoad(){
 	
 	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
 	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
-	REG_BG0HOFS = (TileSize*8);
-	REG_BG0VOFS = (TileSize*8);
+	REG_BG0HOFS = (u16)(TileSize*8);
+	REG_BG0VOFS = (u16)(TileSize*8);
 	
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
 	
 	for (int i=0; i<SizeX*SizeY; i++){ 
 		Block b;
-		b.TileIndex = i%32;
+		b.TileIndex = (u16)i%32;
 		Grid.push_back(b);
 	};
 	drawLevel();
+	Gp->som.playBGM(3, true);
 }
 void Level::drawLevel(){
-	if (REG_BG0HOFS!=(TileSize*8) && REG_BG0HOFS%(TileSize*8)==0){
-		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
-		REG_BG0HOFS = (TileSize*8);
-	}
-	if (REG_BG0VOFS!=(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0){
-		ViewY += (REG_BG0VOFS/(TileSize*8)-1);
-		REG_BG0VOFS = (TileSize*8);
-	}
 	
 	for (int i=0; i<(192/(TileSize*8)+2); i++){
 		for (int j=0; j<(256/(TileSize*8)+2); j++){
@@ -76,18 +70,19 @@ void Level::drawLevel(){
 			
 		}
 	}
-	iprintf("draw\n");
+	
 	AnimDirty = false;
 }
 
 void Level::onUnload(){};
 bool Level::tick(){
-		if (REG_BG0HOFS!=(TileSize*8) && REG_BG0HOFS%(TileSize*8)==0){
+	if ((u16)REG_BG0HOFS!=(u16)(TileSize*8) && REG_BG0HOFS%(TileSize*8)==0){
+		iprintf("%i\n", REG_BG0HOFS);
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
 		REG_BG0HOFS = (TileSize*8);
 		AnimDirty = true;
 	}
-	if (REG_BG0VOFS!=(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0){
+	if (REG_BG0VOFS!=(u16)(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0){
 		ViewY += (REG_BG0VOFS/(TileSize*8)-1);
 		REG_BG0VOFS = (TileSize*8);
 		AnimDirty = true;
@@ -169,6 +164,7 @@ Game::Game(){
 	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0);
+	iprintf("setup\n");
 }
 
 void Game::loadLevel(Level* nLvl){
@@ -176,7 +172,7 @@ void Game::loadLevel(Level* nLvl){
 		lvl->onUnload();
 	}
 	lvl = nLvl;
-	lvl->onLoad();
+	lvl->onLoad(this);
 	LevelLoaded = true;	
 	LevelPaused = false;
 }
