@@ -15,7 +15,7 @@ class Sprite{
 	public:
 		SpriteEntry* ISpriteEntry;
 		SpriteEntry* getSpriteEntry();
-		SpriteEntry* setSpriteEntry();
+		void setSpriteEntry(SpriteEntry*);
 	private:
 };
 
@@ -27,8 +27,11 @@ class Entity{
 		int GridY;
 		int aX;
 		int aY;
+		bool SpriteChanged;
 		Sprite ISprite;
 		
+		Entity();
+		virtual void onLoad();
 		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
 	private:
@@ -41,9 +44,10 @@ class Block{
 		u16 TileIndex;
 		bool Solid;
 		bool Opaque;
+		bool HasEntity;
 		Entity* IEntity;
 		
-		
+		Block();
 		virtual void onLoad();
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
@@ -54,23 +58,25 @@ class Block{
 class Level{
 	public:
 		OamState OamTable;
-		int OamIndex;
+		u8 OamIndex;
 		int ViewX;
 		int ViewY;
 		int SizeX;
 		int SizeY;
 		u16 TileSize;
 		bool AnimDirty;
-		Game* Gp;
+		bool OamDirty;
 		Entity* Player;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
+		SpriteEntry OamEntryMain[128];
+		SpriteEntry OamEntrySub[128];
 		std::vector<Block> Grid;
 		
 		SpriteEntry* getOamEntry();
 		void flipOam();
 		virtual bool tick();
-		virtual void onLoad(Game*);
+		virtual void onLoad();
 		virtual void onUnload();
 	private:
 		void drawLevel();

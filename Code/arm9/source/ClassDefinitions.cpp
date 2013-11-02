@@ -6,46 +6,103 @@
 #include "soundbank_bin.h"
 #include "soundbank.h"
 #include "Tileset.h"
-
+extern Game* gp;
 
 //Sprite Methods
-
+void Sprite::setSpriteEntry(SpriteEntry* _sp){
+	ISpriteEntry = _sp;
+}
+SpriteEntry* Sprite::getSpriteEntry(){
+	return ISpriteEntry;
+}
 //Entity Methods
-
+Entity::Entity(){
+	SpriteChanged = true;
+}
+void Entity::onLoad(){
+	ISprite = Sprite();
+	SpriteEntry* _sp = gp->lvl->getOamEntry();
+	ISprite.setSpriteEntry(_sp);
+}
+bool Entity::useOn(Item* ip, Entity* ep){
+	return true;
+}
+bool Entity::tick(){
+	//calculations and such
+	if (SpriteChanged){
+		u16 vx = gp->lvl->ViewX;
+		u16 vy = gp->lvl->ViewY;
+		u8 ts = gp->lvl->TileSize * 8;
+		
+		ISprite.ISpriteEntry->x = GridX - vx + REG_BG0HOFS - ts;
+		ISprite.ISpriteEntry->y = GridY - vy + REG_BG0VOFS - ts;
+		gp->lvl->OamDirty = true;
+	}
+	return true;
+}
 //Block Methods
+Block::Block(){
+	HasEntity = false;
+}
 u16 Block::getTileIndex(){
 	return TileIndex;
 }
 
-void Block::onLoad(){};
-bool Block::tick(){return true;};
+void Block::onLoad(){
+	
+};
+bool Block::tick(){
+	if (HasEntity){
+		IEntity->tick();
+	}
+	return true;
+}
 bool Block::useOn(Item*, Entity*){return true;};
 //Level Methods
-void Level::onLoad(Game* _gp){
+void Level::onLoad(){
 	
-	Gp = _gp;
 	TileSize = 2;
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
 	ViewX = 0;
 	ViewY = 0;
-	AnimDirty = false;
+	OamIndex = 0;
+	AnimDirty = true;
+	OamDirty = true;
 	
 	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
 	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
-	REG_BG0HOFS = (u16)(TileSize*8);
-	REG_BG0VOFS = (u16)(TileSize*8);
+	REG_BG0HOFS = (vu16)(TileSize*8);
+	REG_BG0VOFS = (vu16)(TileSize*8);
 	
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
 	
+	
+	for (u8 i=0; i<128; i++){
+		OamEntryMain[i].blendMode = OBJMODE_NORMAL;
+		OamEntryMain[i].colorMode = OBJCOLOR_256;
+		OamEntryMain[i].priority = OBJPRIORITY_0;
+		OamEntryMain[i].hFlip = false;
+		OamEntryMain[i].vFlip = false;
+		OamEntryMain[i].isRotateScale = false;
+		OamEntryMain[i].isSizeDouble = false;
+		OamEntryMain[i].shape = OBJSHAPE_SQUARE;
+		OamEntryMain[i].size = OBJSIZE_16;
+		OamEntryMain[i].x = 0;
+		OamEntryMain[i].y = 0;
+	}
+	
 	for (int i=0; i<SizeX*SizeY; i++){ 
 		Block b;
 		b.TileIndex = (u16)i%32;
+		b.onLoad();
 		Grid.push_back(b);
 	};
 	drawLevel();
-	Gp->som.playBGM(3, true);
+	oamEnable(&oamMain);
+	oamEnable(&oamSub);
+	gp->som.playBGM(3, true);
 }
 void Level::drawLevel(){
 	
@@ -74,25 +131,40 @@ void Level::drawLevel(){
 	AnimDirty = false;
 }
 
-void Level::onUnload(){};
+void Level::onUnload(){
+	oamDisable(&oamMain);
+	oamDisable(&oamSub);
+}
 bool Level::tick(){
-	if ((u16)REG_BG0HOFS!=(u16)(TileSize*8) && REG_BG0HOFS%(TileSize*8)==0){
+	if (((vu16)REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
 		iprintf("%i\n", REG_BG0HOFS);
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
-		REG_BG0HOFS = (TileSize*8);
+		REG_BG0HOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
-	if (REG_BG0VOFS!=(u16)(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0){
+	if ((REG_BG0VOFS!=(u16)(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0)){
 		ViewY += (REG_BG0VOFS/(TileSize*8)-1);
-		REG_BG0VOFS = (TileSize*8);
+		REG_BG0VOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
 	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
 		it->tick();
 	}
 	if (AnimDirty){ drawLevel();};
+	if (OamDirty){
+		swiCopy(OamEntryMain, &oamMain, (128 * sizeof(SpriteEntry)) / 2);
+		swiCopy(OamEntrySub, &oamSub, (128 * sizeof(SpriteEntry)) / 2);
+		OamDirty = false;
+	}
 	return true;
 };
+
+SpriteEntry* Level::getOamEntry(){
+	if (OamIndex<128){
+		return (SpriteEntry*)&OamEntryMain[OamIndex++];
+	}
+	else {return (SpriteEntry*)&OamEntryMain[127];};
+}
 //ScoreManager Methods
 
 //SoundManager Methods
@@ -172,7 +244,7 @@ void Game::loadLevel(Level* nLvl){
 		lvl->onUnload();
 	}
 	lvl = nLvl;
-	lvl->onLoad(this);
+	lvl->onLoad();
 	LevelLoaded = true;	
 	LevelPaused = false;
 }
