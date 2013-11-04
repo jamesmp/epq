@@ -36,10 +36,10 @@ void Sprite::setSpriteEntry(u8 _oid){
 }
 //Entity Methods
 Entity::Entity(){
-	SpriteChanged = true;
 	CanMove = true;
 }
 void Entity::onLoad(){
+	SpriteChanged = true;
 	ISprite = Sprite();
 	u8 _si = gp->lvl->getOamEntry();
 	ISprite.setSpriteEntry(_si);
@@ -51,14 +51,11 @@ bool Entity::useOn(Item* ip, Entity* ep){
 }
 bool Entity::tick(){
 	//calculations and such
-	if (abs(aX) >= gp->lvl->TileSize*8){
-		GridX += aX/(gp->lvl->TileSize*8);
-		aX = aX%(gp->lvl->TileSize*8);
-	}
-	if (abs(aY) >= gp->lvl->TileSize*8){
-		GridY += aY/(gp->lvl->TileSize*8);
-		aY = aY%(gp->lvl->TileSize*8);
-	}
+
+	calcSprite();
+	return true;
+}
+void Entity::calcSprite(){
 	if (SpriteChanged){
 		u16 vx = gp->lvl->ViewX;
 		u16 vy = gp->lvl->ViewY;
@@ -69,7 +66,6 @@ bool Entity::tick(){
 		ISprite.writeOam();
 		//SpriteChanged = false;
 	}
-	return true;
 }
 //Block Methods
 Block::Block(){
@@ -111,6 +107,24 @@ void Level::onLoad(){
 	TileSize = 2;
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
+	
+	loadCommon();
+	
+	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
+	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
+
+	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
+	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/4);
+	
+	
+	initBlocks();
+	drawLevel();
+
+	gp->som.playSFX(5, 1024);
+	//gp->som.playBGM(3, true);
+	//gp->som.setBGMVol(64);
+}
+void Level::loadCommon(){
 	ViewX = 0;
 	ViewY = 0;
 	OamIndex = 0;
@@ -118,8 +132,6 @@ void Level::onLoad(){
 	
 	SpriteMapModeMain = SpriteMapping_1D_256;
 	
-	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
-	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
 	REG_BG0HOFS = (u16)(TileSize*8);
 	REG_BG0VOFS = (u16)(TileSize*8);
 	
@@ -127,20 +139,9 @@ void Level::onLoad(){
 	oamInit(&oamSub, SpriteMapModeSub, false);
 	
 	SpriteBase = oamGetGfxPtr(&oamMain, 0);
-	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
-	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/4);
 	
-	initBlocks();
-	Entity* te = new Entity;
-	te->onLoad();
-	Grid[SizeX+1].setEntity(te);
-	Player = te;
-	drawLevel();
 	oamEnable(&oamMain);
 	oamEnable(&oamSub);
-	gp->som.playSFX(4, 1024);
-	//gp->som.playBGM(3, true);
-	//gp->som.setBGMVol(64);
 }
 void Level::drawLevel(){
 	
@@ -178,18 +179,20 @@ void Level::onUnload(){
 }
 bool Level::tick(){
 	
-	
-	if (((Player->GridY - ViewY)*TileSize*8  + Player->aY - 64) < 0 && ViewY > 0){
-		REG_BG0VOFS = Player->aY + (TileSize*8);
+	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
+		it->tick();
 	}
-	if (((Player->GridY - ViewY)*TileSize*8  + Player->aY + 64) > 192 && ViewY < SizeY){
-		REG_BG0VOFS = Player->aY + (TileSize*8);
+	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
+		REG_BG0VOFS -= 1;
 	}
-	if (((Player->GridX - ViewX)*TileSize*8  + Player->aX - 96) < 0 && ViewX > 0){
-		REG_BG0HOFS = Player->aX + (TileSize*8);
+	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY + 64) > 192 && ViewY < (SizeY - (192 / (TileSize*8)))){
+		REG_BG0VOFS += 1;
 	}
-	if (((Player->GridX - ViewX)*TileSize*8  + Player->aX + 96) > 256 && ViewX < SizeX){
-		REG_BG0HOFS = Player->aX + (TileSize*8);
+	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX - 96) < 0 && ViewX > 0){
+		REG_BG0HOFS -= 1;
+	}
+	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX + 96) > 256 && ViewX < (SizeX - (256 / (TileSize*8)))){
+		REG_BG0HOFS += 1;
 	}
 	if ((REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
@@ -202,9 +205,7 @@ bool Level::tick(){
 		AnimDirty = true;
 	}
 	
-	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
-		it->tick();
-	}
+	
 	
 	if (AnimDirty){ drawLevel();};
 	oamUpdate(&oamMain);
@@ -228,7 +229,7 @@ u8 Level::getOamEntry(){
 }
 
 bool Level::isPlayer(Entity* to){
-	return to==Player;
+	return to==IPlayer;
 }
 //ScoreManager Methods
 

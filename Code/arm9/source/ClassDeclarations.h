@@ -50,7 +50,9 @@ class Entity{
 		virtual void onLoad();
 		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
+		void calcSprite();
 	private:
+
 };
 
 class Block{
@@ -84,7 +86,7 @@ class Level{
 		u16 TileSize;
 		u16* SpriteBase;
 		bool AnimDirty;
-		Entity* Player;
+		Entity* IPlayer;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
 		std::vector<Block> Grid;
@@ -95,8 +97,9 @@ class Level{
 		virtual void initBlocks();
 		virtual void onLoad();
 		virtual void onUnload();
-	private:
+		void loadCommon();
 		void drawLevel();
+	private:
 };
 
 class ScoreManager{
