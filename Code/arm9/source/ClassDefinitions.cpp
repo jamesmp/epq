@@ -1,7 +1,10 @@
+
+
 #include "ClassDeclarations.h"
 #include <maxmod9.h>
 #include <vector>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "soundbank_bin.h"
 #include "soundbank.h"
@@ -34,6 +37,7 @@ void Sprite::setSpriteEntry(u8 _oid){
 //Entity Methods
 Entity::Entity(){
 	SpriteChanged = true;
+	CanMove = true;
 }
 void Entity::onLoad(){
 	ISprite = Sprite();
@@ -47,7 +51,14 @@ bool Entity::useOn(Item* ip, Entity* ep){
 }
 bool Entity::tick(){
 	//calculations and such
-	
+	if (abs(aX) >= gp->lvl->TileSize*8){
+		GridX += aX/(gp->lvl->TileSize*8);
+		aX = aX%(gp->lvl->TileSize*8);
+	}
+	if (abs(aY) >= gp->lvl->TileSize*8){
+		GridY += aY/(gp->lvl->TileSize*8);
+		aY = aY%(gp->lvl->TileSize*8);
+	}
 	if (SpriteChanged){
 		u16 vx = gp->lvl->ViewX;
 		u16 vy = gp->lvl->ViewY;
@@ -63,6 +74,7 @@ bool Entity::tick(){
 //Block Methods
 Block::Block(){
 	HasEntity = false;
+	Solid = Opaque = true;
 }
 u16 Block::getTileIndex(){
 	return TileIndex;
@@ -88,6 +100,11 @@ void Block::setEntity(Entity* _ne){
 	}
 }
 bool Block::useOn(Item*, Entity*){return true;};
+void Block::onUnload(){
+	if (HasEntity){
+		delete IEntity;
+	}
+}
 //Level Methods
 void Level::onLoad(){
 	
@@ -103,8 +120,8 @@ void Level::onLoad(){
 	
 	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
 	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
-	REG_BG0HOFS = (vu16)(TileSize*8);
-	REG_BG0VOFS = (vu16)(TileSize*8);
+	REG_BG0HOFS = (u16)(TileSize*8);
+	REG_BG0VOFS = (u16)(TileSize*8);
 	
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
@@ -113,19 +130,17 @@ void Level::onLoad(){
 	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
 	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/4);
 	
-	for (int i=0; i<SizeX*SizeY; i++){ 
-		Block b;
-		b.TileIndex = (u16)i%32;
-		b.onLoad(i%SizeX, i/SizeX);
-		Grid.push_back(b);
-	};
+	initBlocks();
 	Entity* te = new Entity;
 	te->onLoad();
 	Grid[SizeX+1].setEntity(te);
+	Player = te;
 	drawLevel();
 	oamEnable(&oamMain);
 	oamEnable(&oamSub);
-	gp->som.playBGM(3, true);
+	gp->som.playSFX(4, 1024);
+	//gp->som.playBGM(3, true);
+	//gp->som.setBGMVol(64);
 }
 void Level::drawLevel(){
 	
@@ -157,10 +172,26 @@ void Level::drawLevel(){
 void Level::onUnload(){
 	oamDisable(&oamMain);
 	oamDisable(&oamSub);
+	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
+		it->onUnload();
+	}
 }
 bool Level::tick(){
+	
+	
+	if (((Player->GridY - ViewY)*TileSize*8  + Player->aY - 64) < 0 && ViewY > 0){
+		REG_BG0VOFS = Player->aY + (TileSize*8);
+	}
+	if (((Player->GridY - ViewY)*TileSize*8  + Player->aY + 64) > 192 && ViewY < SizeY){
+		REG_BG0VOFS = Player->aY + (TileSize*8);
+	}
+	if (((Player->GridX - ViewX)*TileSize*8  + Player->aX - 96) < 0 && ViewX > 0){
+		REG_BG0HOFS = Player->aX + (TileSize*8);
+	}
+	if (((Player->GridX - ViewX)*TileSize*8  + Player->aX + 96) > 256 && ViewX < SizeX){
+		REG_BG0HOFS = Player->aX + (TileSize*8);
+	}
 	if ((REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
-		iprintf("%i\n", REG_BG0HOFS);
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
 		REG_BG0HOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
@@ -170,20 +201,34 @@ bool Level::tick(){
 		REG_BG0VOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
+	
 	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
 		it->tick();
 	}
+	
 	if (AnimDirty){ drawLevel();};
 	oamUpdate(&oamMain);
 	oamUpdate(&oamSub);
 	return true;
-};
+}
+void Level::initBlocks(){
+	for (int i=0; i<SizeX*SizeY; i++){ 
+		Block b;
+		b.TileIndex = (u16)i%32;
+		b.onLoad(i%SizeX, i/SizeX);
+		Grid.push_back(b);
+	}
+}
 
 u8 Level::getOamEntry(){
 	if (OamIndex<128){
 		return OamIndex++;
 	}
 	else return 127;
+}
+
+bool Level::isPlayer(Entity* to){
+	return to==Player;
 }
 //ScoreManager Methods
 
@@ -201,11 +246,17 @@ SoundManager::SoundManager(){
 	BGM[8] = MOD_ULTRASYDXSELVMORD;
 	BGM[9] = MOD_RNDD;
 	BGM[10] = MOD_NECROMANCERS_CASTLE;
+	SFX[0] = SFX_EXPLODE;
+	SFX[1] = SFX_HIT;
+	SFX[2] = SFX_PICKUP;
+	SFX[3] = SFX_PICKUP2;
+	SFX[4] = SFX_SELECT;
+	SFX[5] = SFX_WHIP;
 	for (int i=0; i<sizeof(BGM)/sizeof(mm_word); i++){
 		mmLoad(BGM[i]);
 	}
 	for (int i=0; i<sizeof(SFX)/sizeof(mm_word); i++){
-		//mmLoadEffect(SFX[i]);
+		mmLoadEffect(SFX[i]);
 	}
 	playingBGM = playingSFX = false;
 }
@@ -275,3 +326,4 @@ void Game::mainLoop(){
 		lvl->tick();
 	}
 }
+

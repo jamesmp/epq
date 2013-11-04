@@ -1,3 +1,6 @@
+#ifndef _CLASS_DEFINITIONS
+#define _CLASS_DEFINITIONS
+
 #include <nds.h>
 #include <maxmod9.h>
 #include <vector>
@@ -40,6 +43,7 @@ class Entity{
 		int aX;
 		int aY;
 		bool SpriteChanged;
+		bool CanMove;
 		Sprite ISprite;
 		
 		Entity();
@@ -63,6 +67,7 @@ class Block{
 		virtual void onLoad(int, int);
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
+		virtual void onUnload();
 		void setEntity(Entity*);
 		u16 getTileIndex();
 	private:
@@ -85,7 +90,9 @@ class Level{
 		std::vector<Block> Grid;
 		
 		u8 getOamEntry();
+		bool isPlayer(Entity*);
 		virtual bool tick();
+		virtual void initBlocks();
 		virtual void onLoad();
 		virtual void onUnload();
 	private:
@@ -105,7 +112,7 @@ class ScoreManager{
 class SoundManager{
 		private:
 				mm_word BGM[(u8)11];
-				mm_word SFX[(u8)16];
+				mm_word SFX[(u8)6];
 				bool playingBGM;
 				bool playingSFX;
 		public:
@@ -137,3 +144,5 @@ class Game{
 				void mainLoop();
 				void loadLevel(Level*);
 };
+
+#endif

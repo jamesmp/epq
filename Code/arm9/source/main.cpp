@@ -6,6 +6,7 @@
 #include <nds.h>
 #include <stdio.h>
 #include "ClassDeclarations.h"
+#include "Levels.h"
 //---------------------------------------------------------------------------------
 Game* gp;
 int main(void) {
@@ -13,7 +14,7 @@ int main(void) {
 	consoleDemoInit();
 	Game g; 
 	gp = &g;
-	Level l;
+	Level1 l;
 	Level* lp = &l;
 	gp->loadLevel(lp);
 	iprintf("Hello World!\n");
@@ -21,10 +22,10 @@ int main(void) {
 		scanKeys();
 		
 		
-		if (keysDown() & KEY_RIGHT){REG_BG0HOFS+=1;};
-		if (keysDown() & KEY_LEFT){REG_BG0HOFS-=1;};
-		if (keysDown() & KEY_UP){REG_BG0VOFS-=1;};
-		if (keysDown() & KEY_DOWN){REG_BG0VOFS+=1;};
+		if (keysHeld() & KEY_RIGHT){gp->lvl->Player->aX+=1;};
+		if (keysHeld() & KEY_LEFT){gp->lvl->Player->aX-=1;};
+		if (keysHeld() & KEY_UP){gp->lvl->Player->aY-=1;};
+		if (keysHeld() & KEY_DOWN){gp->lvl->Player->aY+=1;};
 		gp->lvl->tick();
 		swiWaitForVBlank();
 	}

@@ -1,3 +1,9 @@
+#define SFX_EXPLODE	0
+#define SFX_HIT	1
+#define SFX_PICKUP	2
+#define SFX_PICKUP2	3
+#define SFX_SELECT	4
+#define SFX_WHIP	5
 #define MOD_KEYG_SUBTONAL	0
 #define MOD_NECROMANCERS_CASTLE	1
 #define MOD_PIGLUMP	2
@@ -10,5 +16,5 @@
 #define MOD_ULTRASYDXCRZN	9
 #define MOD_ULTRASYDXSELVMORD	10
 #define MSL_NSONGS	11
-#define MSL_NSAMPS	159
-#define MSL_BANKSIZE	170
+#define MSL_NSAMPS	165
+#define MSL_BANKSIZE	176
