@@ -13,9 +13,21 @@ class Game;
 
 class Sprite{
 	public:
-		SpriteEntry* ISpriteEntry;
-		SpriteEntry* getSpriteEntry();
-		void setSpriteEntry(SpriteEntry*);
+		u16* GfxBase;
+		u8 AnimFrame;
+		u8 OamID;
+		SpriteSize Size;
+		SpriteColorFormat Colour;
+		int DrawX;
+		int DrawY;
+		bool HFlip;
+		bool VFlip;
+	
+		void writeOam();
+		void setGfxPointer(u16*);
+		void setAnimFrame(u8);
+		void setSpriteEntry(u8);
+		Sprite();
 	private:
 };
 
@@ -48,9 +60,10 @@ class Block{
 		Entity* IEntity;
 		
 		Block();
-		virtual void onLoad();
+		virtual void onLoad(int, int);
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
+		void setEntity(Entity*);
 		u16 getTileIndex();
 	private:
 };
@@ -64,17 +77,14 @@ class Level{
 		int SizeX;
 		int SizeY;
 		u16 TileSize;
+		u16* SpriteBase;
 		bool AnimDirty;
-		bool OamDirty;
 		Entity* Player;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
-		SpriteEntry OamEntryMain[128];
-		SpriteEntry OamEntrySub[128];
 		std::vector<Block> Grid;
 		
-		SpriteEntry* getOamEntry();
-		void flipOam();
+		u8 getOamEntry();
 		virtual bool tick();
 		virtual void onLoad();
 		virtual void onUnload();

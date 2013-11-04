@@ -6,14 +6,30 @@
 #include "soundbank_bin.h"
 #include "soundbank.h"
 #include "Tileset.h"
+#include "Sprites.h"
 extern Game* gp;
 
 //Sprite Methods
-void Sprite::setSpriteEntry(SpriteEntry* _sp){
-	ISpriteEntry = _sp;
+Sprite::Sprite(){
+	OamID = 127;
+	DrawX = DrawY = 0;
+	GfxBase = gp->lvl->SpriteBase;
+	AnimFrame = 0;
+	VFlip = HFlip = false;
+};
+void Sprite::writeOam(){
+	u16* gfx = GfxBase + AnimFrame*4*64;
+	oamSet(&oamMain, OamID, DrawX, DrawY, 0, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, VFlip, HFlip, false);
+	
 }
-SpriteEntry* Sprite::getSpriteEntry(){
-	return ISpriteEntry;
+void Sprite::setAnimFrame(u8 _f){
+	AnimFrame = _f;
+}
+void Sprite::setGfxPointer(u16* _g){
+	GfxBase = _g;
+}
+void Sprite::setSpriteEntry(u8 _oid){
+	OamID = _oid;
 }
 //Entity Methods
 Entity::Entity(){
@@ -21,22 +37,26 @@ Entity::Entity(){
 }
 void Entity::onLoad(){
 	ISprite = Sprite();
-	SpriteEntry* _sp = gp->lvl->getOamEntry();
-	ISprite.setSpriteEntry(_sp);
+	u8 _si = gp->lvl->getOamEntry();
+	ISprite.setSpriteEntry(_si);
+	aX = GridX = 0;
+	aY = GridY = 0;
 }
 bool Entity::useOn(Item* ip, Entity* ep){
 	return true;
 }
 bool Entity::tick(){
 	//calculations and such
+	
 	if (SpriteChanged){
 		u16 vx = gp->lvl->ViewX;
 		u16 vy = gp->lvl->ViewY;
 		u8 ts = gp->lvl->TileSize * 8;
 		
-		ISprite.ISpriteEntry->x = GridX - vx + REG_BG0HOFS - ts;
-		ISprite.ISpriteEntry->y = GridY - vy + REG_BG0VOFS - ts;
-		gp->lvl->OamDirty = true;
+		ISprite.DrawX = GridX * ts - vx * ts - REG_BG0HOFS + ts + aX;
+		ISprite.DrawY = GridY * ts - vy * ts - REG_BG0VOFS + ts + aY;
+		ISprite.writeOam();
+		//SpriteChanged = false;
 	}
 	return true;
 }
@@ -48,14 +68,24 @@ u16 Block::getTileIndex(){
 	return TileIndex;
 }
 
-void Block::onLoad(){
-	
-};
+void Block::onLoad(int _xp, int _yp){
+	XPos = _xp;
+	YPos = _yp;
+}
 bool Block::tick(){
 	if (HasEntity){
 		IEntity->tick();
 	}
 	return true;
+}
+void Block::setEntity(Entity* _ne){
+	if (!HasEntity){
+		HasEntity = true;
+		IEntity = _ne;
+		IEntity->GridX = XPos;
+		IEntity->GridY = YPos;
+		IEntity->SpriteChanged = true;
+	}
 }
 bool Block::useOn(Item*, Entity*){return true;};
 //Level Methods
@@ -68,7 +98,8 @@ void Level::onLoad(){
 	ViewY = 0;
 	OamIndex = 0;
 	AnimDirty = true;
-	OamDirty = true;
+	
+	SpriteMapModeMain = SpriteMapping_1D_256;
 	
 	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
 	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
@@ -78,27 +109,19 @@ void Level::onLoad(){
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
 	
-	
-	for (u8 i=0; i<128; i++){
-		OamEntryMain[i].blendMode = OBJMODE_NORMAL;
-		OamEntryMain[i].colorMode = OBJCOLOR_256;
-		OamEntryMain[i].priority = OBJPRIORITY_0;
-		OamEntryMain[i].hFlip = false;
-		OamEntryMain[i].vFlip = false;
-		OamEntryMain[i].isRotateScale = false;
-		OamEntryMain[i].isSizeDouble = false;
-		OamEntryMain[i].shape = OBJSHAPE_SQUARE;
-		OamEntryMain[i].size = OBJSIZE_16;
-		OamEntryMain[i].x = 0;
-		OamEntryMain[i].y = 0;
-	}
+	SpriteBase = oamGetGfxPtr(&oamMain, 0);
+	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
+	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/4);
 	
 	for (int i=0; i<SizeX*SizeY; i++){ 
 		Block b;
 		b.TileIndex = (u16)i%32;
-		b.onLoad();
+		b.onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
 	};
+	Entity* te = new Entity;
+	te->onLoad();
+	Grid[SizeX+1].setEntity(te);
 	drawLevel();
 	oamEnable(&oamMain);
 	oamEnable(&oamSub);
@@ -136,7 +159,7 @@ void Level::onUnload(){
 	oamDisable(&oamSub);
 }
 bool Level::tick(){
-	if (((vu16)REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
+	if ((REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
 		iprintf("%i\n", REG_BG0HOFS);
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
 		REG_BG0HOFS = (vu16)(TileSize*8);
@@ -151,19 +174,16 @@ bool Level::tick(){
 		it->tick();
 	}
 	if (AnimDirty){ drawLevel();};
-	if (OamDirty){
-		swiCopy(OamEntryMain, &oamMain, (128 * sizeof(SpriteEntry)) / 2);
-		swiCopy(OamEntrySub, &oamSub, (128 * sizeof(SpriteEntry)) / 2);
-		OamDirty = false;
-	}
+	oamUpdate(&oamMain);
+	oamUpdate(&oamSub);
 	return true;
 };
 
-SpriteEntry* Level::getOamEntry(){
+u8 Level::getOamEntry(){
 	if (OamIndex<128){
-		return (SpriteEntry*)&OamEntryMain[OamIndex++];
+		return OamIndex++;
 	}
-	else {return (SpriteEntry*)&OamEntryMain[127];};
+	else return 127;
 }
 //ScoreManager Methods
 
@@ -235,7 +255,8 @@ Game::Game(){
 	
 	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 	vramSetBankA(VRAM_A_MAIN_BG);
-	REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0);
+	vramSetBankB(VRAM_B_MAIN_SPRITE);
+	REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0) | BG_PRIORITY(3);
 	iprintf("setup\n");
 }
 
