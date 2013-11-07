@@ -1,5 +1,3 @@
-
-
 #include "ClassDeclarations.h"
 #include <maxmod9.h>
 #include <vector>
@@ -51,7 +49,7 @@ bool Entity::useOn(Item* ip, Entity* ep){
 }
 bool Entity::tick(){
 	//calculations and such
-
+	calcGrid();
 	calcSprite();
 	return true;
 }
@@ -65,6 +63,22 @@ void Entity::calcSprite(){
 		ISprite.DrawY = GridY * ts - vy * ts - REG_BG0VOFS + ts + aY;
 		ISprite.writeOam();
 		//SpriteChanged = false;
+	}
+}
+void Entity::calcGrid(){
+	if (abs(aX) >= gp->lvl->TileSize*8){
+		gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
+		GridX += aX/(gp->lvl->TileSize*8);
+		aX = aX%(gp->lvl->TileSize*8);
+		Moving = false;
+		gp->lvl->getBlock(GridX, GridY)->setEntity(this);
+	}
+	if (abs(aY) >= gp->lvl->TileSize*8){
+		gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
+		GridY += aY/(gp->lvl->TileSize*8);
+		aY = aY%(gp->lvl->TileSize*8);
+		Moving = false;
+		gp->lvl->getBlock(GridX, GridY)->setEntity(this);
 	}
 }
 //Block Methods
@@ -93,14 +107,20 @@ void Block::setEntity(Entity* _ne){
 		IEntity->GridX = XPos;
 		IEntity->GridY = YPos;
 		IEntity->SpriteChanged = true;
+		onEnter(_ne);
 	}
 }
 bool Block::useOn(Item*, Entity*){return true;};
+void Block::onEnter(Entity* _e){};
 void Block::onUnload(){
 	if (HasEntity){
 		delete IEntity;
 	}
 }
+void Block::setTileIndex(u16 _ti){
+	TileIndex = _ti;
+}
+
 //Level Methods
 void Level::onLoad(){
 	
@@ -230,6 +250,12 @@ u8 Level::getOamEntry(){
 
 bool Level::isPlayer(Entity* to){
 	return to==IPlayer;
+}
+Block* Level::getBlock(int _x, int _y){
+	if (_x<(SizeX) && _y<(SizeY) && _x>=0 && _y>=0){
+		return (Block*)&Grid[_x + _y * SizeX];
+	}
+	return (Block*)&Grid[0];
 }
 //ScoreManager Methods
 

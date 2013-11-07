@@ -7,15 +7,32 @@
 #include "soundbank.h"
 #include "Tileset.h"
 #include "Sprites.h"
+#include "Blocks.h"
+#include "LevelTest.h"
 extern Game* gp;
+extern BlockFactory bf;
 
 void Level1::initBlocks(){
-	for (int i=0; i<SizeX*SizeY; i++){ 
+	for (int i=0; i<SizeX*SizeY; i++){
+		int id = (LevelTestBitmap[i/2] & (15 << (i%2)*4)) >> (i%2)*4;
 		Block b;
-		b.TileIndex = (u16)i%32;
+		switch (id){
+			default:
+				b = bf.makeFloor((u16)32);
+				break;
+			case 1:
+				b = bf.makeWall((u16)6);
+				break;
+			case 0:
+				b = bf.makeFloor((u16)21);
+				break;
+		}
 		b.onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
 	}
+	Block b = bf.makeWall((u16)4);
+	b.onLoad(3, 3);
+	Grid[3 + 3 * SizeX] = b;
 }
 
 void Level1::onLoad(){
@@ -41,54 +58,57 @@ void Level1::onLoad(){
 	
 	drawLevel();
 
-	gp->som.playSFX(5, 1024);
+	gp->som.playSFX(0, 1024);
 }
 
 bool Player::tick(){
 	if (!Moving){
-		if((keysDown() & KEY_LEFT) && GridX>0){
-			Moving = true;
-			IMoveDir = move_left;
+		if((keysHeld() & KEY_LEFT) && GridX>0){
+			if (!gp->lvl->getBlock(GridX-1, GridY)->Solid){
+				Moving = true;
+				IMoveDir = left;
+				gp->som.playSFX(2, 1024);
+			}
 		}
-		if((keysDown() & KEY_RIGHT) && GridX<gp->lvl->SizeX - 1){
-			Moving = true;
-			IMoveDir = move_right;
+		else if((keysHeld() & KEY_RIGHT) && GridX<gp->lvl->SizeX - 1){
+			if (!gp->lvl->getBlock(GridX+1, GridY)->Solid){
+				Moving = true;
+				IMoveDir = right;
+				gp->som.playSFX(3, 1024);
+			}
 		}
-		if((keysDown() & KEY_UP) && GridY>0){
-			Moving = true;
-			IMoveDir = move_up;
+		else if((keysHeld() & KEY_UP) && GridY>0){
+			if (!gp->lvl->getBlock(GridX, GridY-1)->Solid){
+				Moving = true;
+				IMoveDir = up;
+				gp->som.playSFX(4, 1024);
+			};
 		}
-		if((keysDown() & KEY_DOWN) && GridY<gp->lvl->SizeY - 1){
-			Moving = true;
-			IMoveDir = move_down;
+		else if((keysHeld() & KEY_DOWN) && GridY<gp->lvl->SizeY - 1){
+			if (!gp->lvl->getBlock(GridX, GridY+1)->Solid){
+				Moving = true;
+				IMoveDir = down;
+				gp->som.playSFX(5, 1024);
+			}
 		}
 	}
 	else{
 		switch (IMoveDir){
-			case move_left:
+			case left:
 				aX-=1;
 				break;
-			case move_right:
+			case right:
 				aX+=1;
 				break;
-			case move_up:
+			case up:
 				aY-=1;
 				break;
-			case move_down:
+			case down:
 				aY+=1;
 				break;
 		}
 	}
-	if (abs(aX) >= gp->lvl->TileSize*8){
-		GridX += aX/(gp->lvl->TileSize*8);
-		aX = aX%(gp->lvl->TileSize*8);
-		Moving = false;
-	}
-	if (abs(aY) >= gp->lvl->TileSize*8){
-		GridY += aY/(gp->lvl->TileSize*8);
-		aY = aY%(gp->lvl->TileSize*8);
-		Moving = false;
-	}
+	calcGrid();
 	calcSprite();
 	return true;
 }

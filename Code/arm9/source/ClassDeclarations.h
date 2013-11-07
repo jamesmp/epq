@@ -44,6 +44,7 @@ class Entity{
 		int aY;
 		bool SpriteChanged;
 		bool CanMove;
+		bool Moving;
 		Sprite ISprite;
 		
 		Entity();
@@ -51,6 +52,7 @@ class Entity{
 		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
 		void calcSprite();
+		void calcGrid();
 	private:
 
 };
@@ -70,6 +72,8 @@ class Block{
 		virtual bool tick();
 		virtual bool useOn(Item*, Entity*);
 		virtual void onUnload();
+		virtual void onEnter(Entity*);
+		void setTileIndex(u16);
 		void setEntity(Entity*);
 		u16 getTileIndex();
 	private:
@@ -97,6 +101,7 @@ class Level{
 		virtual void initBlocks();
 		virtual void onLoad();
 		virtual void onUnload();
+		Block* getBlock(int, int);
 		void loadCommon();
 		void drawLevel();
 	private:

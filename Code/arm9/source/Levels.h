@@ -1,6 +1,6 @@
 #include "ClassDeclarations.h"
 
-enum moveDir{ move_left, move_right, move_up, move_down };
+enum dir{ left, right, up, down };
 
 class Level1: public Level{
 	public:
@@ -12,6 +12,5 @@ class Level1: public Level{
 class Player: public Entity{
 	public:
 		virtual bool tick();
-		moveDir IMoveDir;
-		bool Moving;
+		dir IMoveDir;
 };
