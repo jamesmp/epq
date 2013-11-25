@@ -14,14 +14,11 @@ int main(void) {
 	consoleDemoInit();
 	Game g; 
 	gp = &g;
-	Level1 l;
-	Level* lp = &l;
-	gp->loadLevel(lp);
+	Level* lp = new LevelMainMenu;
+	gp->setLevel(lp);
 	iprintf("Hello World!\n");
 	while(true) {
-		scanKeys();
-		
-		gp->lvl->tick();
+		gp->mainLoop();
 		swiWaitForVBlank();
 	}
 

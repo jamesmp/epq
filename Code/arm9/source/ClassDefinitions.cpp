@@ -8,6 +8,7 @@
 #include "soundbank.h"
 #include "Tileset.h"
 #include "Sprites.h"
+#include "Levels.h"
 extern Game* gp;
 
 //Sprite Methods
@@ -19,30 +20,50 @@ Sprite::Sprite(){
 	VFlip = HFlip = false;
 };
 void Sprite::writeOam(){
-	u16* gfx = GfxBase + AnimFrame*4*64;
+	u16* gfx = oamGetGfxPtr(&oamMain, ((int)GfxBase - (int)gp->lvl->SpriteBase)/256 + AnimFrame);
 	oamSet(&oamMain, OamID, DrawX, DrawY, 0, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, VFlip, HFlip, false);
-	
 }
 void Sprite::setAnimFrame(u8 _f){
 	AnimFrame = _f;
 }
-void Sprite::setGfxPointer(u16* _g){
-	GfxBase = _g;
+void Sprite::setGfxBase(int _i){
+	GfxBase = oamGetGfxPtr(&oamMain, _i);
 }
 void Sprite::setSpriteEntry(u8 _oid){
 	OamID = _oid;
 }
+//Item Methods
+u8 Item::getAtt(){
+	return Att;
+}
+u8 Item::getDef(){
+	return Def;
+}
+Item::Item(u8 _att, u8 _def){
+	Def = _def;
+	Att = _att;
+}
+Item::Item(){
+	Def = 0;
+	Att = 0;
+}
+
 //Entity Methods
 Entity::Entity(){
 	CanMove = true;
 }
-void Entity::onLoad(){
+void Entity::loadCommon(){
 	SpriteChanged = true;
+	Moving = false;
 	ISprite = Sprite();
 	u8 _si = gp->lvl->getOamEntry();
 	ISprite.setSpriteEntry(_si);
 	aX = GridX = 0;
 	aY = GridY = 0;
+}
+void Entity::onLoad(){
+	loadCommon();
+	Solid = true;
 }
 bool Entity::useOn(Item* ip, Entity* ep){
 	return true;
@@ -66,20 +87,16 @@ void Entity::calcSprite(){
 	}
 }
 void Entity::calcGrid(){
-	if (abs(aX) >= gp->lvl->TileSize*8){
-		gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
-		GridX += aX/(gp->lvl->TileSize*8);
-		aX = aX%(gp->lvl->TileSize*8);
+	if (aX==0 && aY==0){
 		Moving = false;
-		gp->lvl->getBlock(GridX, GridY)->setEntity(this);
 	}
-	if (abs(aY) >= gp->lvl->TileSize*8){
-		gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
-		GridY += aY/(gp->lvl->TileSize*8);
-		aY = aY%(gp->lvl->TileSize*8);
-		Moving = false;
-		gp->lvl->getBlock(GridX, GridY)->setEntity(this);
-	}
+}
+
+void Entity::translate( int _rx, int _ry){
+	gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
+	GridX+=_rx;
+	GridY+=_ry;
+	gp->lvl->getBlock(GridX, GridY)->setEntity(this);
 }
 //Block Methods
 Block::Block(){
@@ -110,7 +127,11 @@ void Block::setEntity(Entity* _ne){
 		onEnter(_ne);
 	}
 }
-bool Block::useOn(Item*, Entity*){return true;};
+void Block::useOn(Item* _ip, Entity* _ep){
+	if (HasEntity){
+		IEntity->useOn(_ip, _ep);
+	}
+};
 void Block::onEnter(Entity* _e){};
 void Block::onUnload(){
 	if (HasEntity){
@@ -131,18 +152,17 @@ void Level::onLoad(){
 	loadCommon();
 	
 	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
-	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/4);
+	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/2);
 
 	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
-	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/4);
+	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/2);
 	
 	
 	initBlocks();
 	drawLevel();
 
 	gp->som.playSFX(5, 1024);
-	//gp->som.playBGM(3, true);
-	//gp->som.setBGMVol(64);
+	
 }
 void Level::loadCommon(){
 	ViewX = 0;
@@ -169,7 +189,7 @@ void Level::drawLevel(){
 		for (int j=0; j<(256/(TileSize*8)+2); j++){
 			int tX = j + ViewX-1;
 			int tY = i + ViewY-1;
-			u16 tI = Grid[tX+tY*SizeX].getTileIndex();
+			u16 tI = Grid[tX+tY*SizeX]->getTileIndex();
 			
 			
 			for (int x=0; x<TileSize; x++){
@@ -193,14 +213,15 @@ void Level::drawLevel(){
 void Level::onUnload(){
 	oamDisable(&oamMain);
 	oamDisable(&oamSub);
-	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
-		it->onUnload();
+	for (int i=0; i<Grid.size(); i++){
+		Grid[i]->onUnload();
+		delete Grid[i];
 	}
 }
 bool Level::tick(){
 	
-	for (std::vector<Block>::iterator it = Grid.begin(); it != Grid.end(); ++it){
-		it->tick();
+	for (int i=0; i<Grid.size(); i++){
+		Grid[i]->tick();
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
 		REG_BG0VOFS -= 1;
@@ -234,9 +255,9 @@ bool Level::tick(){
 }
 void Level::initBlocks(){
 	for (int i=0; i<SizeX*SizeY; i++){ 
-		Block b;
-		b.TileIndex = (u16)i%32;
-		b.onLoad(i%SizeX, i/SizeX);
+		Block* b = new Block();;
+		b->TileIndex = (u16)i%32;
+		b->onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
 	}
 }
@@ -253,10 +274,14 @@ bool Level::isPlayer(Entity* to){
 }
 Block* Level::getBlock(int _x, int _y){
 	if (_x<(SizeX) && _y<(SizeY) && _x>=0 && _y>=0){
-		return (Block*)&Grid[_x + _y * SizeX];
+		return Grid[_x + _y * SizeX];
 	}
-	return (Block*)&Grid[0];
+	return Grid[0];
 }
+bool Level::testSolid(int _x, int _y){
+	return getBlock(_x, _y)->Solid;
+}
+Level::~Level(){};
 //ScoreManager Methods
 
 //SoundManager Methods
@@ -330,6 +355,7 @@ Game::Game(){
 	scm = ScoreManager();
 	LevelLoaded = false;
 	LevelPaused = true;
+	ChangeLevel = false;
 	
 	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 	vramSetBankA(VRAM_A_MAIN_BG);
@@ -341,6 +367,7 @@ Game::Game(){
 void Game::loadLevel(Level* nLvl){
 	if (LevelLoaded){
 		lvl->onUnload();
+		delete lvl;
 	}
 	lvl = nLvl;
 	lvl->onLoad();
@@ -348,7 +375,19 @@ void Game::loadLevel(Level* nLvl){
 	LevelPaused = false;
 }
 
+void Game::setLevel(Level* nlvl){
+	newlvl = nlvl;
+	ChangeLevel = true;
+}
+
 void Game::mainLoop(){
+	scanKeys();
+	touchRead(&touch);
+	
+	if (ChangeLevel){
+		loadLevel(newlvl);
+		ChangeLevel = false;
+	}
 	if (LevelLoaded && !LevelPaused){
 		lvl->tick();
 	}

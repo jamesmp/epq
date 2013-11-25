@@ -1,6 +1,6 @@
 #include "ClassDeclarations.h"
 
-enum dir{ left, right, up, down };
+
 
 class Level1: public Level{
 	public:
@@ -9,8 +9,9 @@ class Level1: public Level{
 	private:
 };
 
-class Player: public Entity{
+class LevelMainMenu: public Level{
 	public:
-		virtual bool tick();
-		dir IMoveDir;
+		virtual void initBlocks();
+		virtual void onLoad();
 };
+

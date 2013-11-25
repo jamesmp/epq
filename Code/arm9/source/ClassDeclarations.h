@@ -5,6 +5,7 @@
 #include <maxmod9.h>
 #include <vector>
 
+
 class Sprite;
 class Item;
 class Entity;
@@ -27,14 +28,22 @@ class Sprite{
 		bool VFlip;
 	
 		void writeOam();
-		void setGfxPointer(u16*);
+		void setGfxBase(int);
 		void setAnimFrame(u8);
 		void setSpriteEntry(u8);
 		Sprite();
 	private:
 };
 
-
+class Item{
+	public:
+		u8 Def;
+		u8 Att;
+		u8 getDef();
+		u8 getAtt();
+		Item();
+		Item(u8, u8);
+};
 
 class Entity{
 	public:
@@ -45,14 +54,17 @@ class Entity{
 		bool SpriteChanged;
 		bool CanMove;
 		bool Moving;
+		bool Solid;
 		Sprite ISprite;
 		
 		Entity();
 		virtual void onLoad();
 		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
+		void loadCommon();
 		void calcSprite();
 		void calcGrid();
+		void translate(int, int);
 	private:
 
 };
@@ -70,7 +82,7 @@ class Block{
 		Block();
 		virtual void onLoad(int, int);
 		virtual bool tick();
-		virtual bool useOn(Item*, Entity*);
+		virtual void useOn(Item*, Entity*);
 		virtual void onUnload();
 		virtual void onEnter(Entity*);
 		void setTileIndex(u16);
@@ -93,7 +105,7 @@ class Level{
 		Entity* IPlayer;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;
-		std::vector<Block> Grid;
+		std::vector<Block*> Grid;
 		
 		u8 getOamEntry();
 		bool isPlayer(Entity*);
@@ -102,8 +114,11 @@ class Level{
 		virtual void onLoad();
 		virtual void onUnload();
 		Block* getBlock(int, int);
+		bool testSolid(int, int);
 		void loadCommon();
 		void drawLevel();
+		
+		virtual ~Level();
 	private:
 };
 
@@ -138,12 +153,12 @@ class Game{
 		private:
 				bool LevelLoaded;
 				bool LevelPaused;
-				int BG0h, BG1h, BG2h, BG3h, BG0h_sub, BG1h_sub, BG2h_sub, BG3h_sub;
-				
+				bool ChangeLevel;
 		public:
 				ScoreManager scm;
 				SoundManager som;
 				Level* lvl;
+				Level* newlvl;
 
 				int ticks;
 				touchPosition touch;
@@ -151,6 +166,7 @@ class Game{
 				Game();        
 				void mainLoop();
 				void loadLevel(Level*);
+				void setLevel(Level*);
 };
 
 #endif

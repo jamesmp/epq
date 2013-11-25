@@ -11,8 +11,22 @@ class Floor: public Block{
 		Floor();
 };
 
+class Door: public Block{
+	public:
+		Door();
+		void linkToBlock(int, int);
+		void linkToLevel(Level*);
+		virtual void useOn(Item*, Entity*);
+		Level* lp;
+		int bx;
+		int by;
+		bool LinkedBlock;
+		bool LinkedLevel;
+};
+
 class BlockFactory{
 	public:
-		Wall makeWall(u16);
-		Floor makeFloor(u16);
+		Wall* makeWall(u16);
+		Floor* makeFloor(u16);
+		Door* makeDoor(u16);
 };
