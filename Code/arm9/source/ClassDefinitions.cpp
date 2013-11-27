@@ -21,7 +21,7 @@ Sprite::Sprite(){
 };
 void Sprite::writeOam(){
 	u16* gfx = oamGetGfxPtr(&oamMain, ((int)GfxBase - (int)gp->lvl->SpriteBase)/256 + AnimFrame);
-	oamSet(&oamMain, OamID, DrawX, DrawY, 0, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, VFlip, HFlip, false);
+	oamSet(&oamMain, OamID, DrawX, DrawY, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, VFlip, HFlip, false);
 }
 void Sprite::setAnimFrame(u8 _f){
 	AnimFrame = _f;
@@ -31,6 +31,9 @@ void Sprite::setGfxBase(int _i){
 }
 void Sprite::setSpriteEntry(u8 _oid){
 	OamID = _oid;
+}
+void Sprite::onUnload(){
+	oamSet(&oamMain, OamID, 0, 0, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, 0, -1, false, true, VFlip, HFlip, false);
 }
 //Item Methods
 u8 Item::getAtt(){
@@ -98,6 +101,10 @@ void Entity::translate( int _rx, int _ry){
 	GridY+=_ry;
 	gp->lvl->getBlock(GridX, GridY)->setEntity(this);
 }
+
+void Entity::onUnload(){
+	ISprite.onUnload();
+}
 //Block Methods
 Block::Block(){
 	HasEntity = false;
@@ -110,6 +117,7 @@ u16 Block::getTileIndex(){
 void Block::onLoad(int _xp, int _yp){
 	XPos = _xp;
 	YPos = _yp;
+	LightValue=0;
 }
 bool Block::tick(){
 	if (HasEntity){
@@ -170,10 +178,14 @@ void Level::loadCommon(){
 	OamIndex = 0;
 	AnimDirty = true;
 	
+	
 	SpriteMapModeMain = SpriteMapping_1D_256;
 	
 	REG_BG0HOFS = (u16)(TileSize*8);
 	REG_BG0VOFS = (u16)(TileSize*8);
+	
+	REG_BG1HOFS = (u16)(TileSize*8);
+	REG_BG1VOFS = (u16)(TileSize*8);
 	
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
@@ -190,15 +202,18 @@ void Level::drawLevel(){
 			int tX = j + ViewX-1;
 			int tY = i + ViewY-1;
 			u16 tI = Grid[tX+tY*SizeX]->getTileIndex();
+			u8 lI = Grid[tX+tY*SizeX]->LightValue;
 			
 			
 			for (int x=0; x<TileSize; x++){
 				for (int y=0; y<TileSize; y++){
 					if (j*TileSize<32){
 						BG_MAP_RAM(8)[(j*TileSize)+x + (i*TileSize+y)*32] = (u16)(tI*TileSize*TileSize+x+(TileSize*y));
+						BG_MAP_RAM(10)[(j*TileSize)+x + (i*TileSize+y)*32] = (u16)(TileSize*TileSize*(((255-lI)/255)+31));
 					}
 					else{
 						BG_MAP_RAM(8)[(j*TileSize)+x + (i*TileSize+y)*32+992] = (u16)(tI*TileSize*TileSize+x+(TileSize*y));
+						BG_MAP_RAM(10)[(j*TileSize)+x + (i*TileSize+y)*32+992] = (u16)(TileSize*TileSize*(((255-lI)/255)+31));
 					}
 				}
 			}
@@ -222,27 +237,36 @@ bool Level::tick(){
 	
 	for (int i=0; i<Grid.size(); i++){
 		Grid[i]->tick();
+		Grid[i]->LightValue = 0;
 	}
+	calcLight(IPlayer->GridX, IPlayer->GridY, 7);
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
 		REG_BG0VOFS -= 1;
+		REG_BG1VOFS -= 1;
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY + 64) > 192 && ViewY < (SizeY - (192 / (TileSize*8)))){
 		REG_BG0VOFS += 1;
+		REG_BG1VOFS += 1;
 	}
 	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX - 96) < 0 && ViewX > 0){
 		REG_BG0HOFS -= 1;
+		REG_BG1HOFS -= 1;
 	}
 	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX + 96) > 256 && ViewX < (SizeX - (256 / (TileSize*8)))){
 		REG_BG0HOFS += 1;
+		REG_BG1HOFS += 1;
 	}
+	
 	if ((REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
 		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
 		REG_BG0HOFS = (vu16)(TileSize*8);
+		REG_BG1HOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
 	if ((REG_BG0VOFS!=(u16)(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0)){
 		ViewY += (REG_BG0VOFS/(TileSize*8)-1);
 		REG_BG0VOFS = (vu16)(TileSize*8);
+		REG_BG1VOFS = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
 	
@@ -280,6 +304,22 @@ Block* Level::getBlock(int _x, int _y){
 }
 bool Level::testSolid(int _x, int _y){
 	return getBlock(_x, _y)->Solid;
+}
+void Level::calcLight(int x, int y, u8 intensity){
+	Block* b;
+	Block* c = getBlock(x, y);
+	if (!(c->Opaque)){
+		for (int i=0; i<4; i++){
+			s8 GX = (i-2)*(i%2);
+			s8 GY = (i-1)*((i+1)%2);
+			b = getBlock(x+GX, y+GY);
+			
+			if ((b->LightValue<(intensity-1)) && (intensity>1)){
+				b->LightValue = intensity-1;
+				calcLight(x+GX, y+GY, intensity-1);
+			}
+		}
+	}
 }
 Level::~Level(){};
 //ScoreManager Methods
@@ -357,10 +397,11 @@ Game::Game(){
 	LevelPaused = true;
 	ChangeLevel = false;
 	
-	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE);
+	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE| DISPLAY_BG1_ACTIVE);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
 	REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0) | BG_PRIORITY(3);
+	REG_BG1CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(10) | BG_TILE_BASE(0) | BG_PRIORITY(0);
 	iprintf("setup\n");
 }
 

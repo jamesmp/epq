@@ -22,3 +22,12 @@ class Mob: public Entity{
 		dir IFaceDir;
 		int HitPoints;
 };
+
+class Rock: public Entity{
+	public:
+		virtual bool tick();
+		virtual void onLoad();
+		virtual bool useOn(Item*, Entity*);
+		bool move();
+		dir IMoveDir;
+};

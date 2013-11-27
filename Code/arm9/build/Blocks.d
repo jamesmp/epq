@@ -58,7 +58,8 @@ Blocks.o: \
  c:/devkitPro/libnds/include/nds/arm9/video.h \
  c:/devkitPro/libnds/include/nds/arm9/videoGL.h \
  c:/devkitPro/libnds/include/maxmod9.h \
- c:/devkitPro/libnds/include/mm_types.h
+ c:/devkitPro/libnds/include/mm_types.h \
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Blocks.h:
 
@@ -177,3 +178,5 @@ c:/devkitPro/libnds/include/nds/arm9/videoGL.h:
 c:/devkitPro/libnds/include/maxmod9.h:
 
 c:/devkitPro/libnds/include/mm_types.h:
+
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h:

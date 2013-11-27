@@ -31,6 +31,7 @@ class Sprite{
 		void setGfxBase(int);
 		void setAnimFrame(u8);
 		void setSpriteEntry(u8);
+		void onUnload();
 		Sprite();
 	private:
 };
@@ -61,6 +62,7 @@ class Entity{
 		virtual void onLoad();
 		virtual bool useOn(Item*, Entity*);
 		virtual bool tick();
+		virtual void onUnload();
 		void loadCommon();
 		void calcSprite();
 		void calcGrid();
@@ -77,6 +79,7 @@ class Block{
 		bool Solid;
 		bool Opaque;
 		bool HasEntity;
+		u8 LightValue;
 		Entity* IEntity;
 		
 		Block();
@@ -113,6 +116,7 @@ class Level{
 		virtual void initBlocks();
 		virtual void onLoad();
 		virtual void onUnload();
+		void calcLight(int, int, u8);
 		Block* getBlock(int, int);
 		bool testSolid(int, int);
 		void loadCommon();

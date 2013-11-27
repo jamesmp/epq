@@ -23,7 +23,7 @@ void Level1::initBlocks(){
 				b = bf.makeFloor((u16)32);
 				break;
 			case 1:
-				b = bf.makeWall((u16)6);
+				b = bf.makeWall((u16)1);
 				break;
 			case 0:
 				b = bf.makeFloor((u16)21);
@@ -32,9 +32,14 @@ void Level1::initBlocks(){
 		b->onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
 	}
-	//Block b = bf.makeWall((u16)4);
-	//b.onLoad(3, 3);
-	//Grid[3 + 3 * SizeX] = b;
+	Actuator* a = bf.makeActuator((u16)33);
+	a->onLoad(4, 2);
+	Grid[4 + 2*SizeX] = a;
+	
+	Plate* p = bf.makePlate((u16)18, a);
+	p->onLoad(3, 4);
+	Grid[3 + 4*SizeX] = p;
+
 }
 
 void Level1::onLoad(){
@@ -63,10 +68,17 @@ void Level1::onLoad(){
 	m->onLoad();
 	Grid[SizeX+ 2]->setEntity(m);
 	
+	Entity* r = new Rock;
+	r->onLoad();
+	Grid[5*SizeX+3]->setEntity(r);
+	
+	r = new Rock;
+	r->onLoad();
+	Grid[7*SizeX+3]->setEntity(r);
+	
 	drawLevel();
 
-	gp->som.playSFX(0, 1024);
-	gp->som.playBGM(3, true);
+	gp->som.playBGM(6, true);
 	gp->som.setBGMVol(128);
 }
 //MainMenu
@@ -119,6 +131,6 @@ void LevelMainMenu::onLoad(){
 	drawLevel();
 
 	gp->som.playSFX(0, 1024);
-	gp->som.playBGM(3, true);
+	gp->som.playBGM(10, true);
 	gp->som.setBGMVol(128);
 }

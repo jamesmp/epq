@@ -24,9 +24,35 @@ class Door: public Block{
 		bool LinkedLevel;
 };
 
+class Triggerable: public Block{
+	public:
+		bool Triggered;
+		bool Active;
+		virtual void trigger(bool);
+		Triggerable();
+};
+
+class Plate: public Block{
+	public:
+		bool LastState;
+		Triggerable* tp;
+		Plate();
+		virtual bool tick();
+		void linkTrigger(Triggerable*);
+};
+
+class Actuator: public Triggerable{
+	public:
+		Actuator();
+		bool Up;
+		bool Locked;
+		virtual void trigger(bool);
+};
 class BlockFactory{
 	public:
 		Wall* makeWall(u16);
 		Floor* makeFloor(u16);
 		Door* makeDoor(u16);
+		Actuator* makeActuator(u16);
+		Plate* makePlate(u16, Triggerable*);
 };

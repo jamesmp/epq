@@ -12,6 +12,7 @@ bool Player::tick(){
 				aX = gp->lvl->TileSize*8 - 1;
 				IMoveDir = left;
 				IFaceDir = left;
+				gp->lvl->AnimDirty = true;
 			}
 		}
 		else if((keysHeld() & KEY_RIGHT) && GridX<gp->lvl->SizeX - 1){
@@ -22,6 +23,7 @@ bool Player::tick(){
 				aX = -gp->lvl->TileSize*8 + 1;
 				IMoveDir = right;
 				IFaceDir = right;
+				gp->lvl->AnimDirty = true;
 			}
 		}
 		else if((keysHeld() & KEY_UP) && GridY>0){
@@ -32,6 +34,7 @@ bool Player::tick(){
 				aY = gp->lvl->TileSize*8 - 1;
 				IMoveDir = up;
 				IFaceDir = up;
+				gp->lvl->AnimDirty = true;
 			};
 		}
 		else if((keysHeld() & KEY_DOWN) && GridY<gp->lvl->SizeY - 1){
@@ -42,6 +45,7 @@ bool Player::tick(){
 				aY = -gp->lvl->TileSize*8 + 1;
 				IMoveDir = down;
 				IFaceDir = down;
+				gp->lvl->AnimDirty = true;
 			}
 		}
 		else if (keysDown() & KEY_A){
@@ -51,8 +55,9 @@ bool Player::tick(){
 				if ((GridY+GY)<gp->lvl->SizeY && (GridX+GX)<gp->lvl->SizeX){
 					Block* b = gp->lvl->getBlock(GridX+GX, GridY+GY);
 					b->useOn((Item*)&MainHand, (Entity*)this);
-					gp->som.playSFX(5, 1024);
-					
+					if (b->HasEntity){
+						gp->som.playSFX(5, 1024);
+					}
 				}
 			}
 		}
@@ -177,7 +182,88 @@ bool Mob::useOn(Item* _ip, Entity* _ep){
 	if (gp->lvl->isPlayer(_ep)){
 		_ip->getAtt() > HitPoints ? HitPoints = 0 : HitPoints-=_ip->getAtt();
 		iprintf("Hit A Foe! %i-%i=%i\n", oldHP, oldHP-HitPoints, HitPoints);
+		gp->som.playSFX(5, 1024);
+		if (HitPoints<=0){
+			onUnload();
+			gp->lvl->getBlock(GridX, GridY)->HasEntity = false;
+			gp->som.playSFX(0, 1024);
+			delete this;
+		}
 		return true;
 	}
 	return false;
+}
+
+bool Rock::useOn(Item* _ip, Entity* _ep){
+	if (gp->lvl->isPlayer(_ep)){
+		Block* b;
+		if (_ep->GridX<GridX){
+			b = gp->lvl->getBlock(GridX+1, GridY);
+			if (!b->Solid && !(b->IEntity->Solid && b->HasEntity)){
+				Moving = true;
+				translate(1, 0);
+				aX = -gp->lvl->TileSize*8 + 1;
+				IMoveDir = right;
+			}
+		}
+		else if(_ep->GridX>GridX){
+			b = gp->lvl->getBlock(GridX-1, GridY);
+			if (!b->Solid && !(b->IEntity->Solid && b->HasEntity)){
+				Moving = true;
+				translate(-1, 0);
+				aX = gp->lvl->TileSize*8 - 1;
+				IMoveDir = left;
+			}
+		}
+		else if(_ep->GridY<GridY){
+			b = gp->lvl->getBlock(GridX, GridY+1);
+			if (!b->Solid && !(b->IEntity->Solid && b->HasEntity)){
+				Moving = true;
+				translate(0, 1);
+				aY = -gp->lvl->TileSize*8 + 1;
+				IMoveDir = down;
+			}
+		}
+		else if(_ep->GridY>GridY){
+			b = gp->lvl->getBlock(GridX, GridY-1);if (!b->Solid && !(b->IEntity->Solid && b->HasEntity)){
+				Moving = true;
+				translate(0, -1);
+				aY = gp->lvl->TileSize*8 - 1;
+				IMoveDir = up;
+			}
+		}
+	}
+	
+}
+
+void Rock::onLoad(){
+	loadCommon();
+	Solid = true;
+	ISprite.setGfxBase(32);
+}
+
+bool Rock::tick(){
+	
+	if(Moving){
+		switch (IMoveDir){
+			case left:
+				aX-=1;
+				break;
+			case right:
+				aX+=1;
+				break;
+			case up:
+				aY-=1;
+				break;
+			case down:
+				aY+=1;
+				break;
+		}
+	}
+	int frame = (aX)/8 + (aY)/8;
+	if (frame<0){frame -= 2*frame;};
+	ISprite.AnimFrame = frame;
+	calcGrid();
+	calcSprite();
+	return true;
 }
