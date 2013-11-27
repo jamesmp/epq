@@ -102,6 +102,7 @@ class Level{
 		int ViewY;
 		int SizeX;
 		int SizeY;
+		u8 AmbientLight;
 		u16 TileSize;
 		u16* SpriteBase;
 		bool AnimDirty;

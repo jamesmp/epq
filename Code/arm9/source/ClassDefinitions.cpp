@@ -156,6 +156,7 @@ void Level::onLoad(){
 	TileSize = 2;
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
+	AmbientLight = 0;
 	
 	loadCommon();
 	
@@ -196,7 +197,10 @@ void Level::loadCommon(){
 	oamEnable(&oamSub);
 }
 void Level::drawLevel(){
-	
+	for (int i=0; i<Grid.size(); i++){
+		Grid[i]->LightValue = AmbientLight;
+	}
+	calcLight(IPlayer->GridX, IPlayer->GridY, 7);
 	for (int i=0; i<(192/(TileSize*8)+2); i++){
 		for (int j=0; j<(256/(TileSize*8)+2); j++){
 			int tX = j + ViewX-1;
@@ -237,9 +241,7 @@ bool Level::tick(){
 	
 	for (int i=0; i<Grid.size(); i++){
 		Grid[i]->tick();
-		Grid[i]->LightValue = 0;
 	}
-	calcLight(IPlayer->GridX, IPlayer->GridY, 7);
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
 		REG_BG0VOFS -= 1;
 		REG_BG1VOFS -= 1;

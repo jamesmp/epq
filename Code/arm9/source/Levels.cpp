@@ -45,6 +45,7 @@ void Level1::initBlocks(){
 void Level1::onLoad(){
 	lcdMainOnTop();
 	TileSize = 2;
+	AmbientLight = 0;
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
 	
@@ -109,6 +110,7 @@ void LevelMainMenu::initBlocks(){
 void LevelMainMenu::onLoad(){
 	lcdMainOnBottom();
 	TileSize = 2;
+	AmbientLight = 250;
 	SizeX = 256/(TileSize*8);
 	SizeY = 192/(TileSize*8);
 	
