@@ -83,8 +83,8 @@ void Entity::calcSprite(){
 		u16 vy = gp->lvl->ViewY;
 		u8 ts = gp->lvl->TileSize * 8;
 		
-		ISprite.DrawX = GridX * ts - vx * ts - REG_BG0HOFS + ts + aX;
-		ISprite.DrawY = GridY * ts - vy * ts - REG_BG0VOFS + ts + aY;
+		ISprite.DrawX = GridX * ts - vx * ts - gp->BG0SX + ts + aX;
+		ISprite.DrawY = GridY * ts - vy * ts - gp->BG0SY + ts + aY;
 		ISprite.writeOam();
 		//SpriteChanged = false;
 	}
@@ -182,12 +182,11 @@ void Level::loadCommon(){
 	
 	SpriteMapModeMain = SpriteMapping_1D_256;
 	
-	REG_BG0HOFS = (u16)(TileSize*8);
-	REG_BG0VOFS = (u16)(TileSize*8);
+	gp->BG0SX = (TileSize*8);
+	gp->BG0SY = (TileSize*8);
 	
-	REG_BG1HOFS = (u16)(TileSize*8);
-	REG_BG1VOFS = (u16)(TileSize*8);
-	
+	gp->BG1SX = (TileSize*8);
+	gp->BG1SY = (TileSize*8);
 	oamInit(&oamMain, SpriteMapModeMain, false);
 	oamInit(&oamSub, SpriteMapModeSub, false);
 	
@@ -243,32 +242,32 @@ bool Level::tick(){
 		Grid[i]->tick();
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
-		REG_BG0VOFS -= 1;
-		REG_BG1VOFS -= 1;
+		gp->BG0SY -= 1;
+		gp->BG1SY -= 1;
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY + 64) > 192 && ViewY < (SizeY - (192 / (TileSize*8)))){
-		REG_BG0VOFS += 1;
-		REG_BG1VOFS += 1;
+		gp->BG0SY += 1;
+		gp->BG1SY += 1;
 	}
 	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX - 96) < 0 && ViewX > 0){
-		REG_BG0HOFS -= 1;
-		REG_BG1HOFS -= 1;
+		gp->BG0SX -= 1;
+		gp->BG1SX -= 1;
 	}
 	if (((IPlayer->GridX - ViewX)*TileSize*8  + IPlayer->aX + 96) > 256 && ViewX < (SizeX - (256 / (TileSize*8)))){
-		REG_BG0HOFS += 1;
-		REG_BG1HOFS += 1;
+		gp->BG0SX += 1;
+		gp->BG1SX += 1;
 	}
 	
-	if ((REG_BG0HOFS!=(u16)(TileSize*8)) && (REG_BG0HOFS%(TileSize*8)==0)){
-		ViewX += (REG_BG0HOFS/(TileSize*8)-1);
-		REG_BG0HOFS = (vu16)(TileSize*8);
-		REG_BG1HOFS = (vu16)(TileSize*8);
+	if ((gp->BG0SX!=(TileSize*8)) && (gp->BG0SX%(TileSize*8)==0)){
+		ViewX += (gp->BG0SX/(TileSize*8)-1);
+		gp->BG0SX = (vu16)(TileSize*8);
+		gp->BG1SX = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
-	if ((REG_BG0VOFS!=(u16)(TileSize*8) && REG_BG0VOFS%(TileSize*8)==0)){
-		ViewY += (REG_BG0VOFS/(TileSize*8)-1);
-		REG_BG0VOFS = (vu16)(TileSize*8);
-		REG_BG1VOFS = (vu16)(TileSize*8);
+	if ((gp->BG0SY!=(u16)(TileSize*8) && gp->BG0SY%(TileSize*8)==0)){
+		ViewY += (gp->BG0SY/(TileSize*8)-1);
+		gp->BG0SY = (vu16)(TileSize*8);
+		gp->BG1SY = (vu16)(TileSize*8);
 		AnimDirty = true;
 	}
 	
@@ -398,12 +397,17 @@ Game::Game(){
 	LevelLoaded = false;
 	LevelPaused = true;
 	ChangeLevel = false;
+	BG0SX = BG0SY = BG1SX = BG1SY = 0;
 	
-	videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE| DISPLAY_BG1_ACTIVE);
+	videoSetMode(MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
-	REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0) | BG_PRIORITY(3);
-	REG_BG1CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(10) | BG_TILE_BASE(0) | BG_PRIORITY(0);
+	BG0 = bgInit(0, BgType_Text8bpp, BgSize_T_512x256, 8, 0);
+	BG1 = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 10, 0);
+	bgSetPriority(BG0, 3);
+	bgSetPriority(BG1, 0);
+	//REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0) | BG_PRIORITY(3);
+	//REG_BG1CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(10) | BG_TILE_BASE(0) | BG_PRIORITY(0);
 	iprintf("setup\n");
 }
 
@@ -434,5 +438,8 @@ void Game::mainLoop(){
 	if (LevelLoaded && !LevelPaused){
 		lvl->tick();
 	}
+	bgSetScroll(BG0, BG0SX, BG0SY);
+	bgSetScroll(BG1, BG1SX, BG1SY);
+	bgUpdate();
 }
 

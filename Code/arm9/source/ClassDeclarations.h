@@ -164,6 +164,12 @@ class Game{
 				SoundManager som;
 				Level* lvl;
 				Level* newlvl;
+				int BG0;
+				int BG1;
+				int BG0SX;
+				int BG0SY;
+				int BG1SX;
+				int BG1SY;
 
 				int ticks;
 				touchPosition touch;
