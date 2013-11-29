@@ -55,4 +55,5 @@ class BlockFactory{
 		Door* makeDoor(u16);
 		Actuator* makeActuator(u16);
 		Plate* makePlate(u16, Triggerable*);
+		Plate* makePlate(u16);
 };

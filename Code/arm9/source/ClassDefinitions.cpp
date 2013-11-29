@@ -9,6 +9,7 @@
 #include "Tileset.h"
 #include "Sprites.h"
 #include "Levels.h"
+#include "Wall.h"
 extern Game* gp;
 
 //Sprite Methods
@@ -199,7 +200,7 @@ void Level::drawLevel(){
 	for (int i=0; i<Grid.size(); i++){
 		Grid[i]->LightValue = AmbientLight;
 	}
-	calcLight(IPlayer->GridX, IPlayer->GridY, 7);
+	calcLight(IPlayer->GridX, IPlayer->GridY, 11);
 	for (int i=0; i<(192/(TileSize*8)+2); i++){
 		for (int j=0; j<(256/(TileSize*8)+2); j++){
 			int tX = j + ViewX-1;
@@ -231,6 +232,8 @@ void Level::drawLevel(){
 void Level::onUnload(){
 	oamDisable(&oamMain);
 	oamDisable(&oamSub);
+	SpawnX = 0;
+	SpawnY = 0;
 	for (int i=0; i<Grid.size(); i++){
 		Grid[i]->onUnload();
 		delete Grid[i];
@@ -307,17 +310,19 @@ bool Level::testSolid(int _x, int _y){
 	return getBlock(_x, _y)->Solid;
 }
 void Level::calcLight(int x, int y, u8 intensity){
-	Block* b;
-	Block* c = getBlock(x, y);
-	if (!(c->Opaque)){
-		for (int i=0; i<4; i++){
-			s8 GX = (i-2)*(i%2);
-			s8 GY = (i-1)*((i+1)%2);
-			b = getBlock(x+GX, y+GY);
-			
-			if ((b->LightValue<(intensity-1)) && (intensity>1)){
-				b->LightValue = intensity-1;
-				calcLight(x+GX, y+GY, intensity-1);
+	if (x>=0 && x<SizeX && y>=0 && y<SizeY){
+		Block* b;
+		Block* c = getBlock(x, y);
+		if (!(c->Opaque)){
+			for (int i=0; i<4; i++){
+					s8 GX = (i-2)*(i%2);
+				s8 GY = (i-1)*((i+1)%2);
+				b = getBlock(x+GX, y+GY);
+				
+				if ((b->LightValue<(intensity-1)) && (intensity>1)){
+					b->LightValue = intensity-1;
+					calcLight(x+GX, y+GY, intensity-1);
+				}
 			}
 		}
 	}
@@ -400,14 +405,23 @@ Game::Game(){
 	BG0SX = BG0SY = BG1SX = BG1SY = 0;
 	
 	videoSetMode(MODE_0_2D);
+	
+	videoSetModeSub(MODE_5_2D);
+	
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
+	
+	vramSetBankC(VRAM_C_SUB_BG_0x06200000);
+	
 	BG0 = bgInit(0, BgType_Text8bpp, BgSize_T_512x256, 8, 0);
 	BG1 = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 10, 0);
+	
+	int bg3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 0,0);
+	swiCopy(WallBitmap, bgGetGfxPtr(bg3), WallBitmapLen/2);
+	swiCopy(WallPal, BG_PALETTE_SUB, WallPalLen/2);
+	
 	bgSetPriority(BG0, 3);
 	bgSetPriority(BG1, 0);
-	//REG_BG0CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(8) | BG_TILE_BASE(0) | BG_PRIORITY(3);
-	//REG_BG1CNT = BG_64x32 | BG_COLOR_256 | BG_MAP_BASE(10) | BG_TILE_BASE(0) | BG_PRIORITY(0);
 	iprintf("setup\n");
 }
 

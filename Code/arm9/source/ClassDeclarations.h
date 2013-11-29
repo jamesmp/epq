@@ -102,6 +102,8 @@ class Level{
 		int ViewY;
 		int SizeX;
 		int SizeY;
+		int SpawnX;
+		int SpawnY;
 		u8 AmbientLight;
 		u16 TileSize;
 		u16* SpriteBase;

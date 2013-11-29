@@ -59,13 +59,13 @@ Levels.o: \
  c:/devkitPro/libnds/include/nds/arm9/videoGL.h \
  c:/devkitPro/libnds/include/maxmod9.h \
  c:/devkitPro/libnds/include/mm_types.h \
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelMainMenu.h \
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelTest.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/build/soundbank_bin.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/build/soundbank.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Tileset.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Sprites.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Blocks.h \
- c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelTest.h \
- c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelMainMenu.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Levels.h:
@@ -186,6 +186,10 @@ c:/devkitPro/libnds/include/maxmod9.h:
 
 c:/devkitPro/libnds/include/mm_types.h:
 
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelMainMenu.h:
+
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelTest.h:
+
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/build/soundbank_bin.h:
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/build/soundbank.h:
@@ -195,9 +199,5 @@ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Tileset.h:
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Sprites.h:
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Blocks.h:
-
-c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelTest.h:
-
-c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/LevelMainMenu.h:
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h:

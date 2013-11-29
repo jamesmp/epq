@@ -18,6 +18,7 @@ class Mob: public Entity{
 		virtual bool useOn(Item*, Entity*);
 		void moveIdle();
 		bool move(int);
+		u16 cooldown;
 		dir IMoveDir;
 		dir IFaceDir;
 		int HitPoints;

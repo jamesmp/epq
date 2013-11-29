@@ -11,7 +11,7 @@
 Game* gp;
 int main(void) {
 //---------------------------------------------------------------------------------
-	consoleDemoInit();
+	//consoleDemoInit();
 	Game g; 
 	gp = &g;
 	Level* lp = new LevelMainMenu;

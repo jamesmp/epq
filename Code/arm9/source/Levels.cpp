@@ -1,4 +1,6 @@
 #include "Levels.h"
+#include "LevelMainMenu.h"
+#include "LevelTest.h"
 #include <maxmod9.h>
 #include <vector>
 #include <stdio.h>
@@ -8,8 +10,6 @@
 #include "Tileset.h"
 #include "Sprites.h"
 #include "Blocks.h"
-#include "LevelTest.h"
-#include "LevelMainMenu.h"
 #include "Entities.h"
 extern Game* gp;
 extern BlockFactory bf;
@@ -18,27 +18,52 @@ void Level1::initBlocks(){
 	for (int i=0; i<SizeX*SizeY; i++){
 		int id = (LevelTestBitmap[i/2] & (15 << (i%2)*4)) >> (i%2)*4;
 		Block* b;
+		Entity* e;
 		switch (id){
 			default:
 				b = bf.makeFloor((u16)32);
-				break;
-			case 1:
-				b = bf.makeWall((u16)1);
+				e = 0;
 				break;
 			case 0:
+				b = bf.makeWall((u16)1);
+				e = 0;
+				break;
+			case 6:
+				b = bf.makeFloor((u16)21);
+				e = 0;
+				break;
+			case 3:
+				b = bf.makePlate((u16) 18);
+				e = 0;
+				break;
+			case 4:
+				b = bf.makeActuator((u16)33);
+				e = 0;
+				break;
+			case 2:
+				b = bf.makeDoor((u16)33);
+				e = 0;
+				break;
+			case 1:
+				b = bf.makeFloor((u16)21);
+				e = new Rock();
+				break;
+			case 5:
+				SpawnX = i%SizeX;
+				SpawnY = i/SizeX;
+				iprintf("%i %i", SpawnX, SpawnY);
 				b = bf.makeFloor((u16)21);
 				break;
 		}
 		b->onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
+		if (e!=0){
+			e->onLoad();
+			b->setEntity(e);
+		}
 	}
-	Actuator* a = bf.makeActuator((u16)33);
-	a->onLoad(4, 2);
-	Grid[4 + 2*SizeX] = a;
-	
-	Plate* p = bf.makePlate((u16)18, a);
-	p->onLoad(3, 4);
-	Grid[3 + 4*SizeX] = p;
+	((Plate*)Grid[11 + 5*SizeX])->linkTrigger((Triggerable*)Grid[4 + 7*SizeX]);
+	((Plate*)Grid[12 + 4*SizeX])->linkTrigger((Triggerable*)Grid[13 + 7*SizeX]);
 
 }
 
@@ -62,20 +87,8 @@ void Level1::onLoad(){
 	
 	Entity* p = new Player;
 	p->onLoad();
-	Grid[SizeX + 1]->setEntity(p);
+	Grid[SpawnY*SizeX + SpawnX]->setEntity(p);
 	IPlayer = p;
-	
-	Entity *m = new Mob;
-	m->onLoad();
-	Grid[SizeX+ 2]->setEntity(m);
-	
-	Entity* r = new Rock;
-	r->onLoad();
-	Grid[5*SizeX+3]->setEntity(r);
-	
-	r = new Rock;
-	r->onLoad();
-	Grid[7*SizeX+3]->setEntity(r);
 	
 	drawLevel();
 

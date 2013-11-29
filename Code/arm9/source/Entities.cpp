@@ -90,6 +90,7 @@ void Player::onLoad(){
 }
 
 bool Mob::tick(){
+	cooldown>0 ? cooldown-- : cooldown=0;
 	moveIdle();
 	if(Moving){
 		switch (IMoveDir){

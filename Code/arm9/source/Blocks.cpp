@@ -134,3 +134,9 @@ Plate* BlockFactory::makePlate(u16 _ti, Triggerable* t){
 	r->linkTrigger(t);
 	return r;
 }
+
+Plate* BlockFactory::makePlate(u16 _ti){
+	Plate* r = new Plate();
+	r->setTileIndex(_ti);
+	return r;
+}
