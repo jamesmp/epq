@@ -52,6 +52,7 @@ class Entity{
 		int GridY;
 		int aX;
 		int aY;
+		int HitPoints;
 		bool SpriteChanged;
 		bool CanMove;
 		bool Moving;
@@ -104,6 +105,7 @@ class Level{
 		int SizeY;
 		int SpawnX;
 		int SpawnY;
+		u16 DFloor;
 		u8 AmbientLight;
 		u16 TileSize;
 		u16* SpriteBase;
@@ -116,9 +118,10 @@ class Level{
 		u8 getOamEntry();
 		bool isPlayer(Entity*);
 		virtual bool tick();
-		virtual void initBlocks();
+		virtual void initBlocks(const unsigned char[], const unsigned char[], int);
 		virtual void onLoad();
 		virtual void onUnload();
+		virtual Level* copy();
 		void calcLight(int, int, u8);
 		Block* getBlock(int, int);
 		bool testSolid(int, int);
@@ -141,8 +144,8 @@ class ScoreManager{
 
 class SoundManager{
 		private:
-				mm_word BGM[(u8)11];
-				mm_word SFX[(u8)6];
+				mm_word BGM[(u8)9];
+				mm_word SFX[(u8)7];
 				bool playingBGM;
 				bool playingSFX;
 		public:
@@ -168,6 +171,7 @@ class Game{
 				Level* newlvl;
 				int BG0;
 				int BG1;
+				int BG3;
 				int BG0SX;
 				int BG0SY;
 				int BG1SX;

@@ -9,9 +9,11 @@
 #include "Tileset.h"
 #include "Sprites.h"
 #include "Levels.h"
-#include "Wall.h"
+#include "MenuImage.h"
+#include "Entities.h"
+#include "Blocks.h"
 extern Game* gp;
-
+extern BlockFactory bf;
 //Sprite Methods
 Sprite::Sprite(){
 	OamID = 127;
@@ -22,7 +24,7 @@ Sprite::Sprite(){
 };
 void Sprite::writeOam(){
 	u16* gfx = oamGetGfxPtr(&oamMain, ((int)GfxBase - (int)gp->lvl->SpriteBase)/256 + AnimFrame);
-	oamSet(&oamMain, OamID, DrawX, DrawY, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, VFlip, HFlip, false);
+	oamSet(&oamMain, OamID, DrawX, DrawY, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, HFlip, VFlip, false);
 }
 void Sprite::setAnimFrame(u8 _f){
 	AnimFrame = _f;
@@ -168,7 +170,7 @@ void Level::onLoad(){
 	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/2);
 	
 	
-	initBlocks();
+	//initBlocks();
 	drawLevel();
 
 	gp->som.playSFX(5, 1024);
@@ -189,9 +191,15 @@ void Level::loadCommon(){
 	gp->BG1SX = (TileSize*8);
 	gp->BG1SY = (TileSize*8);
 	oamInit(&oamMain, SpriteMapModeMain, false);
-	oamInit(&oamSub, SpriteMapModeSub, false);
+	//oamInit(&oamSub, SpriteMapModeSub, false);
 	
 	SpriteBase = oamGetGfxPtr(&oamMain, 0);
+	
+	swiCopy(TilesetTiles, BG_TILE_RAM(0), TilesetTilesLen/2);
+	swiCopy(TilesetPal, BG_PALETTE, TilesetPalLen/2);
+
+	swiCopy(SpritesTiles, SpriteBase, SpritesTilesLen/2);
+	swiCopy(SpritesPal, SPRITE_PALETTE, SpritesPalLen/2);
 	
 	oamEnable(&oamMain);
 	oamEnable(&oamSub);
@@ -231,7 +239,7 @@ void Level::drawLevel(){
 
 void Level::onUnload(){
 	oamDisable(&oamMain);
-	oamDisable(&oamSub);
+	//oamDisable(&oamSub);
 	SpawnX = 0;
 	SpawnY = 0;
 	for (int i=0; i<Grid.size(); i++){
@@ -240,9 +248,16 @@ void Level::onUnload(){
 	}
 }
 bool Level::tick(){
-	
-	for (int i=0; i<Grid.size(); i++){
-		Grid[i]->tick();
+	if (IPlayer->HitPoints>0 && !(keysDown() & KEY_START)){
+		for (int i=0; i<Grid.size(); i++){
+			Grid[i]->tick();
+		}
+	}
+	else if (keysDown()&KEY_START){
+		gp->setLevel(new LevelMainMenu);
+	}
+	else{
+		gp->setLevel(copy());
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
 		gp->BG0SY -= 1;
@@ -281,12 +296,69 @@ bool Level::tick(){
 	oamUpdate(&oamSub);
 	return true;
 }
-void Level::initBlocks(){
-	for (int i=0; i<SizeX*SizeY; i++){ 
-		Block* b = new Block();;
-		b->TileIndex = (u16)i%32;
+void Level::initBlocks(const unsigned char BlockData[], const unsigned char Mapping[], int maplen){
+	for (int i=0; i<SizeX*SizeY; i++){
+		Block* b;
+		Entity* e;
+		unsigned char id = (BlockData[i/2] & (15 << (i%2)*4)) >> (i%2)*4;
+		
+		
+		for (int j=0; j<(maplen/2); j++){
+			if (id==Mapping[j*2]){
+				id = Mapping[(j*2)+1];
+				break;
+			}
+		}
+		if (id<16){
+			b = bf.makeFloor((u16)id+16);
+			e = 0;
+		}
+		else if (id<32){
+			b = bf.makeWall((u16)id-16);
+			e = 0;
+		}
+		else if (id==32){
+			b = bf.makeFloor((u16)DFloor);
+			e = new Mob();
+			iprintf("makasnake %i %i\n", i%SizeX, i/SizeX);
+		}
+		else if (id==33){
+			b = bf.makeFloor((u16)DFloor);
+			e = new Skeleton();
+		}
+		else if (id==48){
+			b = bf.makeFloor((u16)DFloor);
+			e = new Rock();
+		}
+		else if (id==49){
+			b = bf.makeDoor((u16)33);
+			e = 0;
+		}
+		else if (id==50){
+			b = bf.makeActuator((u16)33);
+			e = 0;
+		}
+		else if (id==51){
+			b = bf.makeFloor((u16)32);
+			e = 0;
+		}
+		else if (id==52){
+			SpawnX = i%SizeX;
+			SpawnY = i/SizeX;
+			iprintf("%i %i", SpawnX, SpawnY);
+			b = bf.makeFloor((u16)DFloor);
+			e = 0;
+		}
+		else if (id==53){
+			b = bf.makePlate((u16)18);
+			e = 0;
+		}
 		b->onLoad(i%SizeX, i/SizeX);
 		Grid.push_back(b);
+		if (e!=0){
+			e->onLoad();
+			b->setEntity(e);
+		}
 	}
 }
 
@@ -327,29 +399,32 @@ void Level::calcLight(int x, int y, u8 intensity){
 		}
 	}
 }
+
+Level* Level::copy(){
+	return new Level();
+}
 Level::~Level(){};
 //ScoreManager Methods
 
 //SoundManager Methods
 SoundManager::SoundManager(){
 	mmInitDefaultMem((mm_addr)soundbank_bin);
-	BGM[0] = MOD_KEYG_SUBTONAL;
-	BGM[1] = MOD_PIGLUMP;
-	BGM[2] = MOD_PURPLE_MOTION_INSPIRATION;
-	BGM[3] = MOD_REZ_MONDAY;
+	BGM[0] = MOD_L3V3L_33;
+	BGM[1] = MOD_NECROMANCERS_CASTLE;
+	BGM[2] = MOD_PIGLUMP;
+	BGM[3] = MOD_RNDD;
 	BGM[4] = MOD_SO_CLOSE_;
 	BGM[5] = MOD_THE_NIMBYS;
 	BGM[6] = MOD_ULTRASYD_DUNGEON;
 	BGM[7] = MOD_ULTRASYDXCRZN;
 	BGM[8] = MOD_ULTRASYDXSELVMORD;
-	BGM[9] = MOD_RNDD;
-	BGM[10] = MOD_NECROMANCERS_CASTLE;
 	SFX[0] = SFX_EXPLODE;
 	SFX[1] = SFX_HIT;
 	SFX[2] = SFX_PICKUP;
 	SFX[3] = SFX_PICKUP2;
 	SFX[4] = SFX_SELECT;
 	SFX[5] = SFX_WHIP;
+	SFX[6] = SFX_ROLL;
 	for (int i=0; i<sizeof(BGM)/sizeof(mm_word); i++){
 		mmLoad(BGM[i]);
 	}
@@ -416,12 +491,14 @@ Game::Game(){
 	BG0 = bgInit(0, BgType_Text8bpp, BgSize_T_512x256, 8, 0);
 	BG1 = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 10, 0);
 	
-	int bg3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 0,0);
-	swiCopy(WallBitmap, bgGetGfxPtr(bg3), WallBitmapLen/2);
-	swiCopy(WallPal, BG_PALETTE_SUB, WallPalLen/2);
+	BG3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 0,0);
+	swiCopy(MenuImageBitmap, bgGetGfxPtr(BG3), MenuImageBitmapLen/2);
+	swiCopy(MenuImagePal, BG_PALETTE_SUB, MenuImagePalLen/2);
 	
 	bgSetPriority(BG0, 3);
 	bgSetPriority(BG1, 0);
+	
+	srand((int)this);
 	iprintf("setup\n");
 }
 

@@ -60,9 +60,11 @@ Actuator::Actuator(){
 	HasEntity = false;
 	Up = true;
 	Solid = Opaque = true;
+	Locked = false;
 }
 
 void Actuator::trigger(bool _s){
+	
 	if (!Locked){
 		if (Up==_s){
 			if (_s){
@@ -75,6 +77,7 @@ void Actuator::trigger(bool _s){
 				TileIndex+=1;
 				Solid = Opaque = true;
 			}
+			iprintf("Trigger");
 			gp->lvl->AnimDirty = true;
 		}
 	}
@@ -92,12 +95,14 @@ bool Plate::tick(){
 		if (!LastState){
 			tp->trigger(true);
 			LastState = true;
+			gp->som.playSFX(4, 1024);
 		}
 	}
 	else{
 		if (LastState){
 			tp->trigger(false);
 			LastState = false;
+			gp->som.playSFX(4, 1024);
 		}
 	}
 }

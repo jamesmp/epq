@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "Entities.h"
 extern Game* gp;
 
@@ -66,50 +67,89 @@ bool Player::tick(){
 		switch (IMoveDir){
 			case left:
 				aX-=1;
+				ISprite.HFlip = true;
 				break;
 			case right:
 				aX+=1;
+				ISprite.HFlip = false;
 				break;
 			case up:
 				aY-=1;
+				ISprite.HFlip = false;
 				break;
 			case down:
 				aY+=1;
+				ISprite.HFlip = false;
 				break;
 		}
 	}
+	
+	int frame = (aX)/8 + (aY)/8;
+	if (frame<0){frame -= 2*frame;};
+	if (IMoveDir!=down){
+		frame+=2;
+		if(IMoveDir==up){
+			frame+=2;
+		}
+	}
+	ISprite.AnimFrame = frame;
+	
 	calcGrid();
 	calcSprite();
+	if (HitPoints==0){iprintf("Dead");};
 	return true;
 }
 void Player::onLoad(){
 	loadCommon();
 	Solid = true;
 	IFaceDir = down;
-	MainHand = Item(4, 1);
+	MainHand = Item(25, 1);
+	HitPoints = 100;
 }
 
 bool Mob::tick(){
 	cooldown>0 ? cooldown-- : cooldown=0;
-	moveIdle();
+	if (checkPlayer() && gp->lvl->IPlayer->HitPoints>0){
+		if (cooldown==0){
+			iprintf("Attacking!");
+			gp->som.playSFX(1, 1024);
+			int att = Attack - ((Player*)gp->lvl->IPlayer)->MainHand.getDef();
+			att < 0 ? att=0 : att=att;
+			gp->lvl->IPlayer->HitPoints -= att;
+			cooldown = Cooltime;
+		}
+	}
+	else{
+		moveIdle();
+	}
 	if(Moving){
 		switch (IMoveDir){
 			case left:
 				aX-=1;
+				ISprite.HFlip = true;
 				break;
 			case right:
 				aX+=1;
+				ISprite.HFlip = false;
 				break;
 			case up:
 				aY-=1;
+				ISprite.HFlip = false;
 				break;
 			case down:
 				aY+=1;
+				ISprite.HFlip = false;
 				break;
 		}
 	}
 	int frame = (aX)/8 + (aY)/8;
 	if (frame<0){frame -= 2*frame;};
+	if (IMoveDir!=down && Multidir){
+		frame+=2;
+		if(IMoveDir==up){
+			frame+=2;
+		}
+	}
 	ISprite.AnimFrame = frame;
 	calcGrid();
 	calcSprite();
@@ -122,6 +162,10 @@ void Mob::onLoad(){
 	ISprite.setGfxBase(16);
 	IFaceDir = down;
 	HitPoints = 100;
+	movecool = 0;
+	Attack = 7;
+	Cooltime = 25;
+	Multidir = false;
 }
 bool Mob::move(int _mv){
 	bool moved = false;
@@ -172,10 +216,28 @@ bool Mob::move(int _mv){
 }
 
 void Mob::moveIdle(){
-	if(!Moving){
-		int i = ((GridX * GridY) + (gp->lvl->IPlayer->GridX))%5;
-		move(i);
+	movecool++;
+	if (movecool>(rand()%25) && !Moving){
+		movecool = 0;
+		int d = rand()%4;
+		move(d);
 	}
+}
+
+bool Mob::checkPlayer(){
+	for (int i=0; i<4; i++){
+		s8 GX = (i-2)*(i%2);
+		s8 GY = (i-1)*((i+1)%2);
+		if ((GridY+GY)<gp->lvl->SizeY && (GridX+GX)<gp->lvl->SizeX){
+			Block* b = gp->lvl->getBlock(GridX+GX, GridY+GY);
+			if (b->HasEntity){
+				if (gp->lvl->isPlayer(b->IEntity)){
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 bool Mob::useOn(Item* _ip, Entity* _ep){
@@ -195,8 +257,21 @@ bool Mob::useOn(Item* _ip, Entity* _ep){
 	return false;
 }
 
+void Skeleton::onLoad(){
+	loadCommon();
+	Solid = true;
+	ISprite.setGfxBase(18);
+	IFaceDir = down;
+	HitPoints = 200;
+	movecool = 0;
+	Attack = 11;
+	Cooltime = 25;
+	Multidir = true;
+}
+
 bool Rock::useOn(Item* _ip, Entity* _ep){
 	if (gp->lvl->isPlayer(_ep)){
+		bool Moved = true;
 		Block* b;
 		if (_ep->GridX<GridX){
 			b = gp->lvl->getBlock(GridX+1, GridY);
@@ -232,6 +307,10 @@ bool Rock::useOn(Item* _ip, Entity* _ep){
 				aY = gp->lvl->TileSize*8 - 1;
 				IMoveDir = up;
 			}
+		}
+		else { Moved = false;};
+		if (Moved){
+			gp->som.playSFX(6, 1024);
 		}
 	}
 	

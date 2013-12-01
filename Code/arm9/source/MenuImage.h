@@ -1,29 +1,29 @@
 
-//{{BLOCK(Wall)
+//{{BLOCK(MenuImage)
 
 //======================================================================
 //
-//	Wall, 256x192@8, 
+//	MenuImage, 256x192@8, 
 //	Alphabit on.
 //	+ palette 256 entries, not compressed
 //	+ bitmap not compressed
 //	Total size: 512 + 49152 = 49664
 //
-//	Time-stamp: 2013-12-01, 21:23:34
+//	Time-stamp: 2013-12-01, 20:48:06
 //	Exported by Cearn's GBA Image Transmogrifier, v0.8.6
 //	( http://www.coranac.com/projects/#grit )
 //
 //======================================================================
 
-#ifndef GRIT_WALL_H
-#define GRIT_WALL_H
+#ifndef GRIT_MENUIMAGE_H
+#define GRIT_MENUIMAGE_H
 
-#define WallBitmapLen 49152
-extern const unsigned short WallBitmap[24576];
+#define MenuImageBitmapLen 49152
+extern const unsigned short MenuImageBitmap[24576];
 
-#define WallPalLen 512
-extern const unsigned short WallPal[256];
+#define MenuImagePalLen 512
+extern const unsigned short MenuImagePal[256];
 
-#endif // GRIT_WALL_H
+#endif // GRIT_MENUIMAGE_H
 
-//}}BLOCK(Wall)
+//}}BLOCK(MenuImage)

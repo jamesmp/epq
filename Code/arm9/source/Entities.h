@@ -16,12 +16,21 @@ class Mob: public Entity{
 		virtual bool tick();
 		virtual void onLoad();
 		virtual bool useOn(Item*, Entity*);
+		bool checkPlayer();
 		void moveIdle();
 		bool move(int);
+		bool Multidir;
 		u16 cooldown;
+		u16 movecool;
 		dir IMoveDir;
 		dir IFaceDir;
-		int HitPoints;
+		int Attack;
+		int Cooltime;
+};
+
+class Skeleton: public Mob{
+	public:
+		virtual void onLoad();
 };
 
 class Rock: public Entity{

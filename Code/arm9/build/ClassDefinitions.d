@@ -63,7 +63,9 @@ ClassDefinitions.o: \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Tileset.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Sprites.h \
  c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Levels.h \
- c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Wall.h
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/MenuImage.h \
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h \
+ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Blocks.h
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/ClassDeclarations.h:
 
@@ -191,4 +193,8 @@ c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Sprites.h:
 
 c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Levels.h:
 
-c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Wall.h:
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/MenuImage.h:
+
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Entities.h:
+
+c:/Users/James/Dropbox/School/EPQ/Artefact/Repo/Code/arm9/source/Blocks.h:
