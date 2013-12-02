@@ -10,6 +10,7 @@
 #include "Sprites.h"
 #include "Levels.h"
 #include "MenuImage.h"
+#include "Controls.h"
 #include "Entities.h"
 #include "Blocks.h"
 extern Game* gp;
@@ -21,10 +22,11 @@ Sprite::Sprite(){
 	GfxBase = gp->lvl->SpriteBase;
 	AnimFrame = 0;
 	VFlip = HFlip = false;
+	Visible = true;
 };
 void Sprite::writeOam(){
 	u16* gfx = oamGetGfxPtr(&oamMain, ((int)GfxBase - (int)gp->lvl->SpriteBase)/256 + AnimFrame);
-	oamSet(&oamMain, OamID, DrawX, DrawY, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, false, HFlip, VFlip, false);
+	oamSet(&oamMain, OamID, DrawX, DrawY, 1, 0, SpriteSize_16x16, SpriteColorFormat_256Color, gfx, -1, false, !Visible, HFlip, VFlip, false);
 }
 void Sprite::setAnimFrame(u8 _f){
 	AnimFrame = _f;
@@ -88,6 +90,12 @@ void Entity::calcSprite(){
 		
 		ISprite.DrawX = GridX * ts - vx * ts - gp->BG0SX + ts + aX;
 		ISprite.DrawY = GridY * ts - vy * ts - gp->BG0SY + ts + aY;
+		
+		ISprite.Visible = false;
+		if (GridX >= (vx-1) && GridX <= (vx + 256/ts + 1) && GridY >= (vy-1) && GridY <= (vy + 192/ts + 1)){
+			ISprite.Visible = true;
+		}
+		
 		ISprite.writeOam();
 		//SpriteChanged = false;
 	}
@@ -160,6 +168,7 @@ void Level::onLoad(){
 	SizeX = 512/(TileSize*8);
 	SizeY = 256/(TileSize*8);
 	AmbientLight = 0;
+	ViewDist = 6;
 	
 	loadCommon();
 	
@@ -181,6 +190,7 @@ void Level::loadCommon(){
 	ViewY = 0;
 	OamIndex = 0;
 	AnimDirty = true;
+	PlayerAlive = true;
 	
 	
 	SpriteMapModeMain = SpriteMapping_1D_256;
@@ -208,7 +218,7 @@ void Level::drawLevel(){
 	for (int i=0; i<Grid.size(); i++){
 		Grid[i]->LightValue = AmbientLight;
 	}
-	calcLight(IPlayer->GridX, IPlayer->GridY, 11);
+	calcLight(IPlayer->GridX, IPlayer->GridY, ViewDist);
 	for (int i=0; i<(192/(TileSize*8)+2); i++){
 		for (int j=0; j<(256/(TileSize*8)+2); j++){
 			int tX = j + ViewX-1;
@@ -248,7 +258,7 @@ void Level::onUnload(){
 	}
 }
 bool Level::tick(){
-	if (IPlayer->HitPoints>0 && !(keysDown() & KEY_START)){
+	if (PlayerAlive && !(keysDown() & KEY_START)){
 		for (int i=0; i<Grid.size(); i++){
 			Grid[i]->tick();
 		}
@@ -257,6 +267,11 @@ bool Level::tick(){
 		gp->setLevel(new LevelMainMenu);
 	}
 	else{
+		if (keysDown() & KEY_A){
+			gp->setLevel(copy());
+		}
+	}
+	if (keysDown()&KEY_X){
 		gp->setLevel(copy());
 	}
 	if (((IPlayer->GridY - ViewY)*TileSize*8  + IPlayer->aY - 64) < 0 && ViewY > 0){
@@ -351,6 +366,14 @@ void Level::initBlocks(const unsigned char BlockData[], const unsigned char Mapp
 		}
 		else if (id==53){
 			b = bf.makePlate((u16)18);
+			e = 0;
+		}
+		else if (id==54){
+			b = bf.makeLatch((u16)33);
+			e = 0;
+		}
+		else if (id==55){
+			b = bf.makePodium((u16)34, new LevelWinLevel());
 			e = 0;
 		}
 		b->onLoad(i%SizeX, i/SizeX);
@@ -488,10 +511,19 @@ Game::Game(){
 	
 	vramSetBankC(VRAM_C_SUB_BG_0x06200000);
 	
+	BG3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 0,0);
+	swiCopy(ControlsBitmap, bgGetGfxPtr(BG3), ControlsBitmapLen/2);
+	swiCopy(ControlsPal, BG_PALETTE_SUB, ControlsPalLen/2);
+	
+	scanKeys();
+	while (!(keysDown()&KEY_A)){
+		scanKeys();
+	}
+	
 	BG0 = bgInit(0, BgType_Text8bpp, BgSize_T_512x256, 8, 0);
 	BG1 = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 10, 0);
 	
-	BG3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 0,0);
+	
 	swiCopy(MenuImageBitmap, bgGetGfxPtr(BG3), MenuImageBitmapLen/2);
 	swiCopy(MenuImagePal, BG_PALETTE_SUB, MenuImagePalLen/2);
 	

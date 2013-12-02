@@ -24,6 +24,15 @@ class Door: public Block{
 		bool LinkedLevel;
 };
 
+class Podium: public Block{
+	public:
+		Podium();
+		void linkToLevel(Level*);
+		virtual void useOn(Item*, Entity*);
+		Level* lp;
+		bool LinkedLevel;
+};
+
 class Triggerable: public Block{
 	public:
 		bool Triggered;
@@ -48,6 +57,12 @@ class Actuator: public Triggerable{
 		bool Locked;
 		virtual void trigger(bool);
 };
+class Latch: public Triggerable{
+	public:
+		bool Triggered;
+		Latch();
+		virtual void trigger(bool);
+};
 class BlockFactory{
 	public:
 		Wall* makeWall(u16);
@@ -56,4 +71,6 @@ class BlockFactory{
 		Actuator* makeActuator(u16);
 		Plate* makePlate(u16, Triggerable*);
 		Plate* makePlate(u16);
+		Latch* makeLatch(u16);
+		Podium* makePodium(u16, Level*);
 };

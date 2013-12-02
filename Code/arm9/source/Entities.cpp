@@ -92,11 +92,18 @@ bool Player::tick(){
 			frame+=2;
 		}
 	}
+	if (HitPoints<=0){
+		iprintf("Dead");
+		frame = 6;
+		gp->lvl->PlayerAlive = false;
+		gp->som.playSFX(0, 1024);
+	}
+	
 	ISprite.AnimFrame = frame;
 	
 	calcGrid();
 	calcSprite();
-	if (HitPoints==0){iprintf("Dead");};
+	
 	return true;
 }
 void Player::onLoad(){

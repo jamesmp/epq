@@ -26,6 +26,7 @@ class Sprite{
 		int DrawY;
 		bool HFlip;
 		bool VFlip;
+		bool Visible;
 	
 		void writeOam();
 		void setGfxBase(int);
@@ -105,11 +106,13 @@ class Level{
 		int SizeY;
 		int SpawnX;
 		int SpawnY;
+		u8 ViewDist;
 		u16 DFloor;
 		u8 AmbientLight;
 		u16 TileSize;
 		u16* SpriteBase;
 		bool AnimDirty;
+		bool PlayerAlive;
 		Entity* IPlayer;
 		SpriteMapping SpriteMapModeMain;
 		SpriteMapping SpriteMapModeSub;

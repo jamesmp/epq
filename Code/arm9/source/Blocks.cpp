@@ -47,6 +47,27 @@ void Door::useOn(Item* _ip, Entity* _ep){
 		}
 	}
 }
+//Podium
+Podium::Podium(){
+	HasEntity = false;
+	Solid = Opaque = true;
+	LinkedLevel = false;
+}
+
+void Podium::linkToLevel(Level* _lp){
+	lp = _lp;
+	LinkedLevel = true;
+}
+
+void Podium::useOn(Item* _ip, Entity* _ep){
+	if (gp->lvl->isPlayer(_ep)){
+		if (LinkedLevel){
+			gp->setLevel(lp);
+		} else{
+			iprintf("Unlinked Door Accessed");
+		}
+	}
+}
 //Triggerable
 Triggerable::Triggerable(){
 	HasEntity = false;
@@ -80,6 +101,20 @@ void Actuator::trigger(bool _s){
 			iprintf("Trigger");
 			gp->lvl->AnimDirty = true;
 		}
+	}
+}
+//Latch
+Latch::Latch(){
+	HasEntity = false;
+	Solid = Opaque = true;
+	Triggered= false;
+}
+void Latch::trigger(bool _s){
+	if (!Triggered){
+		TileIndex-=1;
+		Solid = Opaque = false;
+		gp->lvl->AnimDirty = true;
+		Triggered = true;
 	}
 }
 //Plate
@@ -143,5 +178,18 @@ Plate* BlockFactory::makePlate(u16 _ti, Triggerable* t){
 Plate* BlockFactory::makePlate(u16 _ti){
 	Plate* r = new Plate();
 	r->setTileIndex(_ti);
+	return r;
+}
+
+Latch* BlockFactory::makeLatch(u16 _ti){
+	Latch* r = new Latch();
+	r->setTileIndex(_ti);
+	return r;
+}
+
+Podium* BlockFactory::makePodium(u16 _ti, Level* _l){
+	Podium* r = new Podium();
+	r->setTileIndex(_ti);
+	r->linkToLevel(_l);
 	return r;
 }
