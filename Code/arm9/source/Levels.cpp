@@ -60,7 +60,7 @@ void Level1::onLoad(){
 	
 	drawLevel();
 
-	gp->som.playBGM(6, true);
+	gp->som.playBGM(1, true);
 	gp->som.setBGMVol(128);
 }
 Level* Level1::copy(){ return new Level1();};
@@ -119,7 +119,7 @@ void Level3::onLoad(){
 	Grid[SpawnY*SizeX + SpawnX]->setEntity(p);
 	IPlayer = p;
 	
-	gp->som.playBGM(2, true);
+	gp->som.playBGM(3, true);
 	drawLevel();
 }
 Level* Level3::copy(){ return new Level3();};
@@ -221,7 +221,7 @@ void Level6::onLoad(){
 	Grid[SpawnY*SizeX + SpawnX]->setEntity(p);
 	IPlayer = p;
 	
-	gp->som.playBGM(4, true);
+	
 	drawLevel();
 }
 Level* Level6::copy(){ return new Level6();};
